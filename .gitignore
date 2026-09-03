@@ -31,3 +31,11 @@ Thumbs.db
 .firebase/
 firebase-debug.log
 .firebaserc
+
+# IMDb source datasets (hundreds of MB, re-downloadable on demand).
+# The generated src/data/movies.generated.json IS committed.
+scripts/movie-seed/.dataset-cache/
+
+# Python
+__pycache__/
+*.py[cod]
