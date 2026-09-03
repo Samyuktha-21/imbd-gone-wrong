@@ -34,7 +34,7 @@ const ShatterOnClick = ({
   maxReshatters,
   label = "Reassemble the pieces to use this control",
 }: ShatterOnClickProps) => {
-  const { beginDrag, isShattered, shards, shatter } = useShatter({
+  const { beginDrag, isShattered, isSolved, shards, shatter } = useShatter({
     pieces,
     ...(scatterRangePx === undefined ? {} : { scatterRangePx }),
     ...(snapTolerancePx === undefined ? {} : { snapTolerancePx }),
@@ -47,14 +47,18 @@ const ShatterOnClick = ({
       className={["antiux-shatter", className].filter(Boolean).join(" ")}
       data-testid="shatter-field"
       data-shattered={isShattered}
+      data-solved={isSolved}
     >
       <div
         aria-hidden={isShattered}
         className="antiux-shatter__intact"
         data-testid="shatter-intact"
         // Capture phase: intercept the click before the input can focus.
+        // Once solved the handler comes off entirely, so the control underneath
+        // finally works — otherwise anything focusable here is unusable by
+        // construction, since every click to use it would shatter it again.
         onPointerDownCapture={
-          isShattered
+          isShattered || isSolved
             ? undefined
             : (event) => {
                 event.preventDefault();

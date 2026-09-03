@@ -1,17 +1,10 @@
-import { MathCaptchaGate, UnderwaterFilterDefs } from "./antiux";
-import FeaturedHero from "./components/FeaturedHero";
-import MovieGrid from "./components/MovieGrid";
+import { Link, Route, Routes } from "react-router";
+import { UnderwaterFilterDefs } from "./antiux";
 import SiteHeader from "./components/SiteHeader";
-import { featuredMovie, movies } from "./data/movies";
-
-/*
- * The catalogue holds 250 titles, but each card carries an SVG displacement
- * filter and mirrored text. Rendering all of them twice means 500 filtered
- * subtrees and a visibly janky page, so each row shows a slice. The gags are
- * the point; grinding the compositor is not.
- */
-const TOP_RATED = movies.slice(0, 24);
-const FAN_FAVOURITES = movies.slice(24, 48);
+import HomePage from "./pages/HomePage";
+import SearchPage from "./pages/SearchPage";
+import TitlePage from "./pages/TitlePage";
+import WatchlistPage from "./pages/WatchlistPage";
 
 const App = () => (
   <>
@@ -20,22 +13,32 @@ const App = () => (
 
     <SiteHeader />
     <main className="page">
-      <FeaturedHero movie={featuredMovie} />
-
-      <h2 className="section-heading">Top Rated Movies</h2>
-      <MovieGrid movies={TOP_RATED} />
-
-      <h2 className="section-heading">Fan Favorites</h2>
-      {/*
-        Mundane content, gated behind "human verification" that effectively
-        needs an AI to pass. Tolerant answer-checking keeps it finishable.
-      */}
-      <MathCaptchaGate actionLabel="see what other fans liked">
-        <MovieGrid movies={FAN_FAVOURITES} />
-      </MathCaptchaGate>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="/title/:id" element={<TitlePage />} />
+        <Route path="/watchlist" element={<WatchlistPage />} />
+        <Route
+          path="*"
+          element={
+            <>
+              <h2 className="section-heading">Page not found</h2>
+              <p className="page-note">
+                Nothing lives at this address. <Link to="/">Go home</Link>.
+              </p>
+            </>
+          }
+        />
+      </Routes>
     </main>
     <footer className="site-footer">
-      Made for a class project. Not affiliated with IMDb.
+      {/*
+        The one control on the site that always does exactly what it says.
+        Every other route out of here is booby-trapped, and a site with no
+        reliable way home stops being a joke and becomes a dead end.
+      */}
+      <Link to="/">Home</Link>
+      <span> · Made for a class project. Not affiliated with IMDb.</span>
     </footer>
   </>
 );

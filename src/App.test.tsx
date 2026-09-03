@@ -1,19 +1,28 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import App from "./App";
 import { SpotlightProvider } from "./spotlight";
+import { WatchlistProvider } from "./watchlist";
 import { AD_VIDEOS } from "./antiux";
 
 /**
  * Integration cover for the Track A + Track B seam. The gags read
  * `useSpotlight()`, which throws outside a provider, so a plain render of
  * the page is enough to catch a broken wiring.
+ *
+ * Mirrors the provider stack in main.tsx; MemoryRouter stands in for
+ * BrowserRouter so each test starts on a known route.
  */
-const renderApp = () =>
+const renderApp = (route = "/") =>
   render(
-    <SpotlightProvider>
-      <App />
-    </SpotlightProvider>,
+    <MemoryRouter initialEntries={[route]}>
+      <WatchlistProvider>
+        <SpotlightProvider>
+          <App />
+        </SpotlightProvider>
+      </WatchlistProvider>
+    </MemoryRouter>,
   );
 
 const isFogLifted = () =>
@@ -23,6 +32,9 @@ describe("App", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     document.documentElement.removeAttribute("data-spotlight-suppressed");
+    // The watchlist persists to localStorage, so tests would otherwise leak
+    // saved titles into each other.
+    window.localStorage.clear();
   });
 
   test("plays a pre-roll that lifts the fog, then restores it on skip", () => {

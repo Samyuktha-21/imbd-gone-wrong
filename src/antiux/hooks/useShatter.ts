@@ -48,6 +48,14 @@ export const useShatter = ({
 }: UseShatterOptions = {}) => {
   const [shards, setShards] = useState<Shard[] | null>(null);
   const [reshattersUsed, setReshattersUsed] = useState(0);
+  /**
+   * Set once the puzzle has been solved, and never cleared.
+   *
+   * Without this the gag is unwinnable on anything you have to focus: touching
+   * the control shatters it, so reassembling it only earns you the right to
+   * shatter it again on the next click. Solving it once buys real access.
+   */
+  const [isSolved, setIsSolved] = useState(false);
   const draggingRef = useRef<{ id: number; startX: number; startY: number; originDx: number; originDy: number } | null>(null);
 
   const isShattered = shards !== null;
@@ -132,10 +140,11 @@ export const useShatter = ({
     };
   }, [isShattered, snapTolerancePx]);
 
-  // Every shard home: the thing pulls itself back together.
+  // Every shard home: the thing pulls itself back together, and stays together.
   useEffect(() => {
     if (shards && shards.every((shard) => shard.placed)) {
       reassemble();
+      setIsSolved(true);
     }
   }, [reassemble, shards]);
 
@@ -169,6 +178,7 @@ export const useShatter = ({
   return {
     beginDrag,
     isShattered,
+    isSolved,
     reassemble,
     reshattersUsed,
     shards,
