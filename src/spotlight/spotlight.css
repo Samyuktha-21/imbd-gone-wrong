@@ -1,0 +1,37 @@
+/*
+ * Registering the radius as a typed custom property lets the browser
+ * interpolate it, so decay reads as a slow closing iris rather than a
+ * once-per-second jerk. Position is intentionally left untyped/untransitioned
+ * so the spotlight tracks the cursor with no lag.
+ */
+@property --spotlight-radius {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 190px;
+}
+
+:root {
+  --spotlight-x: 50vw;
+  --spotlight-y: 50vh;
+}
+
+.spotlight-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+  transition: --spotlight-radius 420ms ease-out;
+  background: radial-gradient(
+    circle var(--spotlight-radius) at var(--spotlight-x) var(--spotlight-y),
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0) 62%,
+    rgba(0, 0, 0, 0.86) 84%,
+    rgb(0, 0, 0) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spotlight-overlay {
+    transition: none;
+  }
+}
