@@ -1,0 +1,6 @@
+# The reference project is read-only and plays no part in this build.
+# Excluding it keeps CLI deploys from uploading ~1000 unrelated files.
+imdb-clone/
+
+node_modules/
+dist/
