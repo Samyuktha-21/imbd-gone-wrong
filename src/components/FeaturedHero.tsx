@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ColorShiftButton, FakeAdInterstitial } from "../antiux";
-import type { Movie } from "../data/movies";
+import { descriptionOf, type Movie } from "../data/movies";
 import { useSpotlight } from "../spotlight";
 import Poster from "./Poster";
 
@@ -27,7 +27,11 @@ const FeaturedHero = ({ movie }: FeaturedHeroProps) => {
 
   return (
     <section className="hero" aria-labelledby="featured-title">
-      <Poster title={movie.title} />
+      <Poster
+        title={movie.title}
+        posterPath={movie.posterPath}
+        size="w342"
+      />
       <div className="hero-body">
         <h1 id="featured-title">{movie.title}</h1>
         <p className="hero-meta">
@@ -40,8 +44,10 @@ const FeaturedHero = ({ movie }: FeaturedHeroProps) => {
             .filter(Boolean)
             .join(" · ")}
         </p>
-        {/* Only well-known titles carry a hand-written blurb; see data/blurbs.ts. */}
-        {movie.blurb && <p className="hero-blurb">{movie.blurb}</p>}
+        {/* Curated blurb if there is one, else TMDB's synopsis. */}
+        {descriptionOf(movie) && (
+          <p className="hero-blurb">{descriptionOf(movie)}</p>
+        )}
         <div className="hero-actions">
           {/* Every "play" press opens the pre-roll first. */}
           <button

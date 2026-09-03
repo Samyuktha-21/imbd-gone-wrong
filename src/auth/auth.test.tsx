@@ -1,7 +1,19 @@
-import { fireEvent, screen } from "@testing-library/react";
-import { afterEach, describe, expect, test } from "vitest";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { clearPersistedState, renderApp as renderAt } from "../test/renderApp";
 import { AUTH_STORAGE_KEY, readSession, writeSession } from "./authStorage";
+import { describeAuthError } from "./firebaseClient";
+
+/**
+ * Force the local-session fallback. Tests must never depend on reaching
+ * Firebase — a real SDK call here would fail on the network and make the whole
+ * suite flaky and offline-hostile. `describeAuthError` stays real so its
+ * mapping is still covered.
+ */
+vi.mock("./firebaseClient", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./firebaseClient")>()),
+  getFirebaseAuth: () => null,
+}));
 import {
   STRENGTH_LABELS,
   VAGUE_ERROR,
@@ -90,22 +102,46 @@ describe("sign-in gag helpers", () => {
   });
 });
 
+describe("describeAuthError", () => {
+  test("explains the console switch still being off", () => {
+    expect(describeAuthError("auth/operation-not-allowed")).toContain(
+      "Firebase console",
+    );
+  });
+
+  test("keeps genuine credential failures honest rather than cryptic", () => {
+    // The vague-error gag is for an incomplete form. A real wrong password
+    // has to say so, or the form becomes a dead end.
+    expect(describeAuthError("auth/wrong-password")).toBe(
+      "Email or password is incorrect.",
+    );
+    expect(describeAuthError("auth/invalid-email")).toContain("not valid");
+  });
+
+  test("falls back to a usable message for an unknown code", () => {
+    expect(describeAuthError("auth/something-new")).toBe(
+      "Sign-in failed. Please try again.",
+    );
+  });
+});
+
 describe("SignInPage", () => {
   test("signing in persists a session and greets you in the header", async () => {
     const { user } = renderAt("/signin");
 
-    await user.type(screen.getByLabelText("Username"), "ebert");
+    await user.type(screen.getByLabelText("Email"), "ebert@example.com");
     await user.type(screen.getByLabelText("Password"), "hunter2");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(readSession()).toEqual({ username: "ebert" });
-    expect(screen.getByRole("link", { name: "ebert" })).toBeInTheDocument();
+    // Sign-in is async now, so the session lands a tick after the click.
+    expect(await screen.findByRole("link", { name: "ebert@example.com" })).toBeInTheDocument();
+    expect(readSession()).toEqual({ username: "ebert@example.com" });
   });
 
   test("an incomplete form fails without ever saying what is wrong", async () => {
     const { user } = renderAt("/signin");
 
-    await user.type(screen.getByLabelText("Username"), "ebert");
+    await user.type(screen.getByLabelText("Email"), "ebert@example.com");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(VAGUE_ERROR);
@@ -115,7 +151,7 @@ describe("SignInPage", () => {
   test("Caps Lock drops your keystrokes into the other field", () => {
     renderAt("/signin");
 
-    const username = screen.getByLabelText("Username") as HTMLInputElement;
+    const username = screen.getByLabelText("Email") as HTMLInputElement;
     const password = screen.getByLabelText("Password") as HTMLInputElement;
 
     typeWithCapsLock(username, "X");
@@ -127,7 +163,7 @@ describe("SignInPage", () => {
   test("Caps Lock swaps in both directions", () => {
     renderAt("/signin");
 
-    const username = screen.getByLabelText("Username") as HTMLInputElement;
+    const username = screen.getByLabelText("Email") as HTMLInputElement;
     const password = screen.getByLabelText("Password") as HTMLInputElement;
 
     typeWithCapsLock(password, "Y");
@@ -139,7 +175,7 @@ describe("SignInPage", () => {
   test("non-printable keys are left alone even with Caps Lock on", () => {
     renderAt("/signin");
 
-    const username = screen.getByLabelText("Username") as HTMLInputElement;
+    const username = screen.getByLabelText("Email") as HTMLInputElement;
     const password = screen.getByLabelText("Password") as HTMLInputElement;
 
     typeWithCapsLock(username, "Backspace");
@@ -163,12 +199,12 @@ describe("SignInPage", () => {
     const remember = screen.getByLabelText("Remember me") as HTMLInputElement;
     expect(remember.checked).toBe(true);
 
-    await user.type(screen.getByLabelText("Username"), "ebert");
+    await user.type(screen.getByLabelText("Email"), "ebert@example.com");
     await user.type(screen.getByLabelText("Password"), "hunter2");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
     // The checkbox lied; the session is kept regardless.
-    expect(readSession()).toEqual({ username: "ebert" });
+    await waitFor(() => expect(readSession()).toEqual({ username: "ebert@example.com" }));
   });
 
   test("restores an existing session and can sign out", async () => {
@@ -181,7 +217,9 @@ describe("SignInPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Sign out" }));
 
+    expect(
+      await screen.findByRole("button", { name: "Sign in" }),
+    ).toBeInTheDocument();
     expect(readSession()).toBeNull();
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
   });
 });

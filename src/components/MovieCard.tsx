@@ -11,7 +11,7 @@ type MovieCardProps = {
 const MovieCard = ({ movie }: MovieCardProps) => (
   <li className="movie-card">
     <Link to={`/title/${movie.id}`} className="movie-card__link">
-      <Poster title={movie.title} />
+      <Poster title={movie.title} posterPath={movie.posterPath} size="w185" />
     </Link>
     <div className="movie-card__body">
       <span className="movie-card__rating">

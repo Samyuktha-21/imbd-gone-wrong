@@ -4,8 +4,13 @@ import type { Session } from "./authStorage";
 export type AuthContextValue = {
   session: Session | null;
   isSignedIn: boolean;
+  /** True while a Firebase request is in flight. */
+  isPending: boolean;
+  /** Local-only sign in, by display name. */
   signIn: (username: string) => void;
-  signOut: () => void;
+  /** Real Firebase sign in, registering the account if the email is new. */
+  signInWithPassword: (email: string, password: string) => Promise<string | null>;
+  signOut: () => void | Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

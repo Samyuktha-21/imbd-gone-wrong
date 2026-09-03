@@ -11,7 +11,8 @@ import {
 
 const SignInPage = () => {
   const navigate = useNavigate();
-  const { isSignedIn, session, signIn, signOut } = useAuth();
+  const { isSignedIn, isPending, session, signInWithPassword, signOut } =
+    useAuth();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -40,7 +41,7 @@ const SignInPage = () => {
       appendTo(field === "username" ? "password" : "username", event.key);
     };
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
     if (!isSubmittable(username, password)) {
@@ -53,7 +54,15 @@ const SignInPage = () => {
     // regardless, so the lie is cosmetic.
     setRemember(false);
     setError("");
-    signIn(username);
+
+    // Real failures get a real message. Being cryptic about a genuinely wrong
+    // password would cross from annoying into a dead end.
+    const failure = await signInWithPassword(username, password);
+    if (failure) {
+      setError(failure);
+      return;
+    }
+
     void navigate("/");
   };
 
@@ -77,9 +86,10 @@ const SignInPage = () => {
       <h2 className="section-heading">Sign in</h2>
       <form className="signin-form" onSubmit={handleSubmit}>
         <label className="signin-field">
-          <span>Username</span>
+          <span>Email</span>
           <input
             name="username"
+            type="email"
             value={username}
             onChange={(event) => setUsername(event.target.value)}
             onKeyDown={handleKeyDown("username")}
@@ -121,13 +131,13 @@ const SignInPage = () => {
           </p>
         )}
 
-        <button type="submit" className="button button--primary">
-          Sign in
+        <button type="submit" className="button button--primary" disabled={isPending}>
+          {isPending ? "Signing in…" : "Sign in"}
         </button>
 
         <p className="page-note">
-          No account needed and no password is stored — this is a class project.
-          Any username will do.
+          New email addresses get an account created automatically — there is no
+          separate sign-up form to go hunting for.
         </p>
       </form>
     </>

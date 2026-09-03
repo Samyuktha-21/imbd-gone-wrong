@@ -2,6 +2,9 @@ export const AUTH_STORAGE_KEY = "imdb-gone-wrong:session";
 
 export type Session = {
   username: string;
+  /** Present for real Firebase accounts; absent for the local fallback. */
+  email?: string;
+  uid?: string;
 };
 
 /**

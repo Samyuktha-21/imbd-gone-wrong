@@ -203,6 +203,7 @@ body {
 /* ---------- poster ---------- */
 
 .poster {
+  position: relative;
   display: flex;
   align-items: flex-end;
   aspect-ratio: 2 / 3;
@@ -213,6 +214,19 @@ body {
   font-weight: 700;
   line-height: 1.25;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+}
+
+/* Fills the tile; the gradient stays behind it as the loading state. */
+.poster__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.poster__fallback {
+  position: relative;
 }
 
 /* ---------- grid ---------- */

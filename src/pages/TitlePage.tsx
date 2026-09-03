@@ -2,7 +2,7 @@ import { Link, useParams } from "react-router";
 import { MirroredText } from "../antiux";
 import Poster from "../components/Poster";
 import WatchlistButton from "../components/WatchlistButton";
-import { movies } from "../data/movies";
+import { descriptionOf, movies } from "../data/movies";
 import { findMovieById } from "../search/searchMovies";
 
 const TitlePage = () => {
@@ -23,7 +23,11 @@ const TitlePage = () => {
 
   return (
     <article className="title-detail">
-      <Poster title={movie.title} />
+      <Poster
+        title={movie.title}
+        posterPath={movie.posterPath}
+        size="w500"
+      />
       <div className="title-detail__body">
         <h1>
           <MirroredText>{movie.title}</MirroredText>
@@ -45,7 +49,9 @@ const TitlePage = () => {
           <strong>{movie.rating.toFixed(1)}</strong>
           <span className="movie-card__meta"> / 10</span>
         </p>
-        {movie.blurb && <p className="hero-blurb">{movie.blurb}</p>}
+        {descriptionOf(movie) && (
+          <p className="hero-blurb">{descriptionOf(movie)}</p>
+        )}
         <div className="hero-actions">
           <WatchlistButton movieId={movie.id} />
         </div>
