@@ -37,8 +37,21 @@
   );
 }
 
+/*
+ * Fog lifted. Only a full-screen video does this, and only while it plays —
+ * the page goes dark again the moment it ends.
+ */
+:root[data-spotlight-suppressed] .spotlight-overlay {
+  opacity: 0;
+  transition: opacity 320ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .spotlight-overlay {
+    transition: none;
+  }
+
+  :root[data-spotlight-suppressed] .spotlight-overlay {
     transition: none;
   }
 }

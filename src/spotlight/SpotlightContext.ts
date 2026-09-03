@@ -10,6 +10,12 @@ export type SpotlightContextValue = {
    * a snapshot in state would go stale.
    */
   getRadius: () => number;
+  /**
+   * Lifts the fog for as long as something needs the page visible — today
+   * that is only full-screen video playback. Written straight to the DOM, so
+   * toggling it re-renders nothing.
+   */
+  setSuppressed: (suppressed: boolean) => void;
 };
 
 export const SpotlightContext = createContext<SpotlightContextValue | null>(

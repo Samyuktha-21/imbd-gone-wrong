@@ -8,7 +8,12 @@ import {
   JUMP_OFFSET_RANGE,
 } from "./spotlightConfig";
 import { registerSpotlightConsole } from "./spotlightConsole";
-import { readRadius, writePosition, writeRadius } from "./spotlightVars";
+import {
+  readRadius,
+  writePosition,
+  writeRadius,
+  writeSuppressed,
+} from "./spotlightVars";
 import "./spotlight.css";
 
 type SpotlightProviderProps = {
@@ -122,7 +127,14 @@ const SpotlightProvider = ({
     };
   }, [enableRandomJumps, schedulePositionWrite]);
 
-  const value = useMemo(() => ({ getRadius: readRadius }), []);
+  // Restore the fog if the provider unmounts mid-playback, so a suppressed
+  // attribute can never outlive the thing that set it.
+  useEffect(() => () => writeSuppressed(false), []);
+
+  const value = useMemo(
+    () => ({ getRadius: readRadius, setSuppressed: writeSuppressed }),
+    [],
+  );
 
   return (
     <SpotlightContext.Provider value={value}>

@@ -3,6 +3,7 @@ import {
   MAX_RADIUS,
   MIN_RADIUS,
   RADIUS_VAR,
+  SUPPRESSED_ATTR,
   X_VAR,
   Y_VAR,
 } from "./spotlightConfig";
@@ -33,3 +34,19 @@ export const writePosition = (x: number, y: number): void => {
   element.style.setProperty(X_VAR, `${x}px`);
   element.style.setProperty(Y_VAR, `${y}px`);
 };
+
+/**
+ * Lifts or restores the fog. Used while a full-screen video plays, where the
+ * whole point is that you can finally see the page — the mercy is temporary.
+ */
+export const writeSuppressed = (suppressed: boolean): void => {
+  const element = root();
+  if (suppressed) {
+    element.setAttribute(SUPPRESSED_ATTR, "");
+  } else {
+    element.removeAttribute(SUPPRESSED_ATTR);
+  }
+};
+
+export const readSuppressed = (): boolean =>
+  root().hasAttribute(SUPPRESSED_ATTR);

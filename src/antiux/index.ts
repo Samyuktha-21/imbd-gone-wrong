@@ -10,7 +10,13 @@ export {
   UNDERWATER_FILTER_ID,
 } from "./components/UnderwaterFilterDefs";
 
+export {
+  AD_VIDEOS,
+  pickRandomAdVideo,
+  type AdVideo,
+} from "./adVideos";
 export { useFakeAdCountdown } from "./hooks/useFakeAdCountdown";
+export { useYouTubePlayer } from "./hooks/useYouTubePlayer";
 export { useMathCaptcha, type MathCaptchaProblem } from "./hooks/useMathCaptcha";
 export { useProximityShrink } from "./hooks/useProximityShrink";
 export {

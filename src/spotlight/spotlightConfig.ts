@@ -21,6 +21,13 @@ export const JUMP_INTERVAL_MS = 9000;
 export const JUMP_DURATION_MS = 850;
 export const JUMP_OFFSET_RANGE = 110;
 
+/**
+ * Set on <html> while the fog is lifted (during full-screen video playback).
+ * An attribute rather than React state keeps the provider re-render-free,
+ * matching how position and radius are already written straight to the DOM.
+ */
+export const SUPPRESSED_ATTR = "data-spotlight-suppressed";
+
 export const RADIUS_VAR = "--spotlight-radius";
 export const X_VAR = "--spotlight-x";
 export const Y_VAR = "--spotlight-y";
