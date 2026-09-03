@@ -1,0 +1,156 @@
+/* Anti-UX gag pack (Track B).
+   Uses the tokens from styles/global.css so gags look native to the page —
+   the mechanics supply the personality, not a competing visual style. */
+
+.antiux-button {
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.09));
+  border-radius: 6px;
+  background-color: var(--surface-raised, #232323);
+  color: var(--text-primary, #ffffff);
+  cursor: pointer;
+  font: inherit;
+  padding: 8px 14px;
+  transition: background-color 150ms ease-out;
+}
+
+.antiux-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.antiux-mirrored {
+  display: inline-block;
+  transition: transform 120ms ease-out;
+}
+
+/* ---------- underwater distortion ---------- */
+
+.antiux-distortion {
+  display: inline-block;
+  transition: filter 200ms ease-out;
+}
+
+/* Off-canvas host for the shared <filter> definition. */
+.antiux-distortion__defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+/* Page-wide ripple. Hover "surfaces" the element so it stays finishable. */
+.antiux-underwater {
+  filter: url(#antiux-underwater-filter);
+  transition: filter 220ms ease-out;
+}
+
+.antiux-underwater:hover {
+  filter: none;
+}
+
+/* ---------- math CAPTCHA gate ---------- */
+
+.antiux-captcha {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 34rem;
+  padding: 18px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.09));
+  border-radius: 10px;
+  background-color: var(--surface, #1a1a1a);
+}
+
+.antiux-captcha__title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.antiux-captcha__question {
+  color: var(--text-secondary, #b0b0b0);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.antiux-captcha__label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-secondary, #b0b0b0);
+  font-size: 13px;
+}
+
+.antiux-captcha__input {
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.09));
+  border-radius: 6px;
+  background-color: var(--page-bg, #121212);
+  color: var(--text-primary, #ffffff);
+  font: inherit;
+  padding: 8px;
+}
+
+.antiux-captcha__error {
+  color: #ff6b6b;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* ---------- fake ad interstitial ---------- */
+
+.antiux-ad {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: rgba(0, 0, 0, 0.96);
+  color: var(--text-primary, #ffffff);
+  text-align: center;
+}
+
+.antiux-ad__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary, #ffffff);
+  cursor: pointer;
+  font-size: 26px;
+  line-height: 1;
+  padding: 4px 10px;
+}
+
+.antiux-ad__close:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.antiux-ad__eyebrow {
+  color: var(--text-secondary, #b0b0b0);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.antiux-ad__glyph {
+  color: var(--imdb-gold, #f5c518);
+  font-size: 64px;
+  line-height: 1;
+}
+
+.antiux-ad__title {
+  font-size: 20px;
+  margin: 0;
+}
+
+.antiux-ad__skip {
+  color: var(--text-secondary, #b0b0b0);
+  font-size: 14px;
+  margin: 0;
+}
