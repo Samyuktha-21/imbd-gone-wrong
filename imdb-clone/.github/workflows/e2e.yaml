@@ -1,0 +1,181 @@
+name: E2E - Manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: Playwright project to run
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - desktop-chromium
+          - mobile-chromium
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgresql:
+        image: postgres:18
+        env:
+          POSTGRES_DB: movie_db
+          POSTGRES_USER: myroot
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -h 127.0.0.1 -U myroot -d movie_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+      opensearch:
+        image: opensearchproject/opensearch:3.6.0
+        env:
+          plugins.security.disabled: "true"
+          discovery.type: single-node
+          DISABLE_INSTALL_DEMO_CONFIG: "true"
+          OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd="curl -fsS http://127.0.0.1:9200/_cluster/health || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=18
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: "25"
+          distribution: temurin
+          cache: gradle
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright browser
+        working-directory: frontend
+        run: yarn playwright install chromium
+
+      - name: Start RustFS
+        run: |
+          docker run -d \
+            --name imdb-clone-rustfs \
+            -p 9000:9000 \
+            -p 9001:9001 \
+            -e RUSTFS_ACCESS_KEY=ROOTNAME \
+            -e RUSTFS_SECRET_KEY=CHANGEME123 \
+            -e RUSTFS_CONSOLE_ENABLE=true \
+            rustfs/rustfs:1.0.0-beta.2 \
+            /data
+
+      - name: Wait for RustFS
+        run: |
+          for attempt in {1..60}; do
+            status_code="$(curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:9000/rustfs/health/ready || true)"
+            if [ "$status_code" = "200" ] || [ "$status_code" = "403" ]; then
+              exit 0
+            fi
+            echo "Waiting for RustFS (${attempt}/60, status: ${status_code})"
+            sleep 2
+          done
+          docker logs imdb-clone-rustfs
+          exit 1
+
+      - name: Start backend
+        run: |
+          nohup ./gradlew bootRun --no-daemon > backend.log 2>&1 &
+          echo $! > backend.pid
+        env:
+          SPRING_PROFILES_ACTIVE: dev
+          SPRING_DOCKER_COMPOSE_ENABLED: "false"
+
+      - name: Wait for backend
+        run: |
+          for attempt in {1..90}; do
+            if curl -fsS http://127.0.0.1:8080/v3/api-docs >/dev/null; then
+              exit 0
+            fi
+            echo "Waiting for backend (${attempt}/90)"
+            sleep 2
+          done
+          cat backend.log
+          exit 1
+
+      - name: Generate frontend API client
+        working-directory: frontend
+        run: |
+          yarn run updateOpenApiSpec
+          yarn run build:moviesGen
+
+      - name: Run Playwright e2e tests
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_PROJECT: ${{ inputs.project }}
+        run: |
+          if [ "$PLAYWRIGHT_PROJECT" = "all" ]; then
+            yarn e2e
+          else
+            yarn playwright test --project="$PLAYWRIGHT_PROJECT"
+          fi
+
+      - name: Collect service logs
+        if: failure()
+        run: |
+          mkdir -p e2e-logs
+          cp backend.log e2e-logs/backend.log || true
+          docker logs imdb-clone-rustfs > e2e-logs/rustfs.log 2>&1 || true
+          docker logs "${{ job.services.postgresql.id }}" > e2e-logs/postgresql.log 2>&1 || true
+          docker logs "${{ job.services.opensearch.id }}" > e2e-logs/opensearch.log 2>&1 || true
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload e2e logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-logs
+          path: e2e-logs
+          if-no-files-found: ignore
+
+      - name: Stop background services
+        if: always()
+        run: |
+          if [ -f backend.pid ]; then
+            kill "$(cat backend.pid)" || true
+          fi
+          docker rm -f imdb-clone-rustfs || true

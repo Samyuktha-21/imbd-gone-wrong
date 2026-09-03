@@ -1,0 +1,81 @@
+version: '3.8'
+services:
+
+  ### ----------------------- Spring Boot Backend ----------------------- ###
+  imdb-clone-backend:
+    container_name: imdb-clone-backend
+    image: niklastiede/imdb-clone-backend:latest
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - IMDB_CLONE_IDENTITY_BACKEND_HOST=${BACKEND_APP_ADDRESS_ENV_VAR}
+      - IMDB_CLONE_IDENTITY_FRONTEND_HOST=${FRONTEND_APP_ADDRESS_ENV_VAR}
+      - IMDB_CLONE_IDENTITY_EMAIL_VERIFICATION_ENABLED=false
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://imdb-clone-postgresql:5432/movie_db
+      - SPRING_DATASOURCE_USERNAME=${POSTGRESQL_USERNAME_ENV_VAR}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRESQL_PASSWORD_ENV_VAR}
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=false
+      - SPRING_MAIL_USERNAME=${MAIL_USERNAME_ENV_VAR}
+      - SPRING_MAIL_PASSWORD=${MAIL_PASSWORD_ENV_VAR}
+      - IMDB_CLONE_NOTIFICATION_EMAIL_SENDER=${MAIL_USERNAME_ENV_VAR}
+      - OPENSEARCH_URIS=http://imdb-clone-opensearch:9200
+      - IMDB_CLONE_MEDIA_STORAGE_URI=http://imdb-clone-rustfs:9000
+      - IMDB_CLONE_MEDIA_STORAGE_ACCESS_KEY=${OBJECT_STORAGE_ACCESS_KEY_ENV_VAR}
+      - IMDB_CLONE_MEDIA_STORAGE_SECRET_KEY=${OBJECT_STORAGE_SECRET_KEY_ENV_VAR}
+      - IMDB_CLONE_MEDIA_STORAGE_BUCKET_NAME=imdb-clone
+      - IMDB_CLONE_IDENTITY_JWT_EXPIRATION_IN_MS=2592000000
+      - IMDB_CLONE_IDENTITY_CORS_ALLOWED_ORIGINS=${FRONTEND_APP_ADDRESS_ENV_VAR}
+      - IMDB_CLONE_IDENTITY_JWT_SECRET=${JWT_SECRET_ENV_VAR}
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    networks:
+      - imdb-clone-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`backend.imdb-clone.the-coding-lab.com`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+
+  ### ----------------------- React Frontend ----------------------- ###
+  imdb-clone-frontend:
+    container_name: imdb-clone-frontend
+    image: niklastiede/imdb-clone-frontend:latest
+    restart: always
+    environment:
+      - REACT_APP_IMDB_CLONE_BACKEND_ADDRESS=${BACKEND_APP_ADDRESS_ENV_VAR}
+      - VITE_IMDB_CLONE_OBJECT_STORAGE_ADDRESS=${OBJECT_STORAGE_ADDRESS_ENV_VAR}
+    networks:
+      - imdb-clone-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`imdb-clone.the-coding-lab.com`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+
+  ## ----------------------- Reverse Proxy ----------------------- ###
+  imdb-clone-reverse-proxy:
+    image: traefik:v3.7.0
+    container_name: imdb-clone-reverse-proxy
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.email=niklastiede2@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=acme.json"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./acme.json:/acme.json
+    networks:
+      - imdb-clone-network
+
+networks:
+  imdb-clone-network:
+    name: imdb-clone-network
+    external: true

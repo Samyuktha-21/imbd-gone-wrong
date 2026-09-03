@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ConfigManagementPlugin
+metadata:
+  name: {{ sops_kustomize_plugin_name }}
+spec:
+  generate:
+    command:
+      - sh
+      - -c
+    args:
+      - |
+        set -eu
+
+        workdir="$(mktemp -d)"
+        trap 'rm -rf "$workdir"' EXIT
+
+        cp -a . "$workdir/src"
+        cd "$workdir/src"
+
+        find . \( -name '*.sops.yaml' -o -name '*.sops.yml' \) -type f | sort | while read -r file; do
+          decrypted="${file}.decrypted"
+          sops --decrypt "$file" > "$decrypted"
+          mv "$decrypted" "$file"
+        done
+
+        kustomize build .

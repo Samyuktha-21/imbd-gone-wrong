@@ -1,0 +1,11 @@
+
+### rate movie
+PUT {{protocol}}{{host}}:{{port}}/api/movie-rating/2872718/rating-score/8.5
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+
+### delete rating
+DELETE {{protocol}}{{host}}:{{port}}/api/movie-rating/2872718
+Authorization: Bearer {{userToken}}
+Content-Type: application/json

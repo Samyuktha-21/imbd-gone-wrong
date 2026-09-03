@@ -1,0 +1,152 @@
+services:
+
+  ### ----------------------- PostgreSQL ----------------------- ###
+  imdb-clone-postgresql:
+    container_name: imdb-clone-postgresql
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=movie_db
+      - POSTGRES_USER=myroot
+      - POSTGRES_PASSWORD=secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - imdb-clone-postgresql-data:/var/lib/postgresql
+    networks:
+      - imdb-clone-network
+
+  ### ----------------------- OpenSearch --------------------- ###
+  imdb-clone-opensearch:
+    container_name: imdb-clone-opensearch
+    image: opensearchproject/opensearch:3.6.0
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx2g
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+    ports:
+      - "9200:9200"
+    volumes:
+      - imdb-clone-opensearch-data:/usr/share/opensearch/data
+    networks:
+      - imdb-clone-network
+
+  ### ----------------------- RustFS ----------------------- ###
+  imdb-clone-rustfs:
+    container_name: imdb-clone-rustfs
+    image: rustfs/rustfs:1.0.0-beta.2
+    restart: unless-stopped
+    user: root
+    environment:
+      - RUSTFS_ACCESS_KEY=ROOTNAME
+      - RUSTFS_SECRET_KEY=CHANGEME123
+      - RUSTFS_CONSOLE_ENABLE=true
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - imdb-clone-rustfs-data:/data
+    networks:
+      - imdb-clone-network
+    command: /data
+
+  imdb-clone-rustfs-init:
+    image: minio/mc:latest
+    depends_on:
+      - imdb-clone-rustfs
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      set -eu
+      until mc alias set rustfs http://imdb-clone-rustfs:9000 "$$ACCESS_KEY" "$$SECRET_KEY"; do
+        sleep 2
+      done
+      mc mb --ignore-existing rustfs/imdb-clone
+      mc anonymous set download rustfs/imdb-clone/movies
+      mc anonymous set download rustfs/imdb-clone/profile-photos
+    environment:
+      - ACCESS_KEY=ROOTNAME
+      - SECRET_KEY=CHANGEME123
+    networks:
+      - imdb-clone-network
+
+  ### ----------------------- llama.cpp ----------------------- ###
+  imdb-clone-llama-cpp:
+    container_name: imdb-clone-llama-cpp
+    image: ghcr.io/ggml-org/llama.cpp:server
+    restart: unless-stopped
+    environment:
+      - LLAMA_ARG_ENDPOINT_METRICS=1
+    ports:
+      - "8082:8080"
+    volumes:
+      - imdb-clone-llama-cpp-cache:/root/.cache
+    networks:
+      - imdb-clone-network
+    command:
+      - -hf
+      - ggml-org/embeddinggemma-300M-GGUF
+      - --embeddings
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+
+  imdb-clone-seed-light:
+    image: ${IMDB_CLONE_SEED_LIGHT_IMAGE:-niklastiede/imdb-clone-seed:light-local}
+    profiles:
+      - seed-light
+    depends_on:
+      - imdb-clone-postgresql
+      - imdb-clone-rustfs
+    environment:
+      - POSTGRES_HOST=imdb-clone-postgresql
+      - POSTGRES_DB=movie_db
+      - POSTGRES_USER=myroot
+      - POSTGRES_PASSWORD=secret
+      - RUSTFS_ENDPOINT=http://imdb-clone-rustfs:9000
+      - RUSTFS_ACCESS_KEY=ROOTNAME
+      - RUSTFS_SECRET_KEY=CHANGEME123
+      - RUSTFS_BUCKET=imdb-clone
+      - SEED_NAME=light
+      - SEED_VERSION=${SEED_VERSION:-local}
+    networks:
+      - imdb-clone-network
+
+  imdb-clone-seed-full:
+    image: ${IMDB_CLONE_SEED_FULL_IMAGE:-niklastiede/imdb-clone-seed:full-local}
+    profiles:
+      - seed-full
+    depends_on:
+      - imdb-clone-postgresql
+      - imdb-clone-rustfs
+    environment:
+      - POSTGRES_HOST=imdb-clone-postgresql
+      - POSTGRES_DB=movie_db
+      - POSTGRES_USER=myroot
+      - POSTGRES_PASSWORD=secret
+      - RUSTFS_ENDPOINT=http://imdb-clone-rustfs:9000
+      - RUSTFS_ACCESS_KEY=ROOTNAME
+      - RUSTFS_SECRET_KEY=CHANGEME123
+      - RUSTFS_BUCKET=imdb-clone
+      - SEED_NAME=full
+      - SEED_VERSION=${SEED_VERSION:-local}
+    networks:
+      - imdb-clone-network
+
+volumes:
+  imdb-clone-postgresql-data:
+    name: imdb-clone-postgresql-data
+  imdb-clone-opensearch-data:
+    name: imdb-clone-opensearch-data
+  imdb-clone-rustfs-data:
+    name: imdb-clone-rustfs-data
+  imdb-clone-llama-cpp-cache:
+    name: imdb-clone-llama-cpp-cache
+
+networks:
+  imdb-clone-network:
+    name: imdb-clone-network
+    driver: bridge

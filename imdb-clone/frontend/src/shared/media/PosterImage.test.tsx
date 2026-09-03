@@ -1,0 +1,41 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import PosterImage from "./PosterImage";
+import { ObjectStorageImageSize } from "./imageUrls";
+
+describe("PosterImage", () => {
+  it("falls back to JPG when the WebP poster object is unavailable", () => {
+    render(
+      <PosterImage
+        posterImageToken="poster-token"
+        size={ObjectStorageImageSize.Large}
+      />,
+    );
+
+    const image = screen.getByAltText("movie poster") as HTMLImageElement;
+    expect(image.src).toContain(
+      "/imdb-clone/movies/posters/poster-token_size_600x900.webp",
+    );
+
+    fireEvent.error(image);
+
+    expect(image.src).toContain(
+      "/imdb-clone/movies/posters/poster-token_size_600x900.jpg",
+    );
+
+    fireEvent.error(image);
+
+    expect(image.src).not.toContain("poster-token");
+  });
+
+  it("uses a movie-specific accessible label", () => {
+    render(
+      <PosterImage
+        alt="Arrival poster"
+        posterImageToken="arrival-token"
+        size={ObjectStorageImageSize.Large}
+      />,
+    );
+
+    expect(screen.getByAltText("Arrival poster")).toBeTruthy();
+  });
+});

@@ -1,0 +1,152 @@
+name: CI - Build / Test Deployables
+
+on:
+  pull_request:
+    branches:
+      - master
+  merge_group:
+    types:
+      - checks_requested
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v5
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Build and Test Spring Boot Application
+        run: ./gradlew build jacocoTestReport
+
+      - name: Build backend runtime image
+        run: make docker-build-backend
+
+      - name: Smoke-test backend runtime image
+        run: make container-smoke-backend
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          files: ./build/reports/jacoco/test/jacocoTestReport.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+
+  frontend-build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache dependencies
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Generate Clients from OpenApi-Spec File
+        run: yarn run build:moviesGen
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Test
+        run: yarn test
+
+      - name: Build
+        run: yarn build
+
+      - name: Build frontend runtime image
+        working-directory: .
+        run: make docker-build-frontend
+
+      - name: Smoke-test frontend runtime image
+        working-directory: .
+        run: make container-smoke-frontend
+
+  agent-build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install uv and Python 3.14
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          python-version: '3.14'
+          enable-cache: true
+          cache-dependency-glob: agent/uv.lock
+
+      - name: Install locked agent dependencies
+        run: make agent-sync
+
+      - name: Verify agent
+        run: make verify-agent
+
+      - name: Build agent image
+        run: make docker-build-agent
+
+      - name: Smoke-test agent image
+        run: make container-smoke-agent
+
+  infrastructure-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.35.0'
+
+      - name: Verify Movie Concierge production contracts
+        run: make verify-movie-concierge-production
+
+      - name: Render and validate observability charts
+        run: make verify-observability-charts
+
+      - name: Validate rendered Kubernetes schemas
+        run: make verify-kubernetes-schema

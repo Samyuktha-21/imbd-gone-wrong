@@ -1,0 +1,23 @@
+---
+k3s_version: "v1.34.8+k3s1"
+k3s_node_name: "homelab-um560"
+k3s_kubeconfig: "/etc/rancher/k3s/k3s.yaml"
+k3s_install_script_url: "https://get.k3s.io"
+k3s_inotify_max_user_instances: 1024
+
+argocd_version: "v3.4.1"
+argocd_namespace: "argocd"
+argocd_root_app_name: "home-root"
+
+sops_version: "v3.10.1"
+sops_age_key_secret_name: "sops-age-key"
+sops_age_key_file: "{{ playbook_dir }}/../../.secrets/sops/age/keys.txt"
+sops_kustomize_plugin_config_name: "sops-kustomize-plugin"
+sops_kustomize_plugin_name: "sops-kustomize"
+
+gitops_repo_url: "https://github.com/NiklasTiede/imdb-clone"
+gitops_repo_revision: "master"
+gitops_root_path: "infrastructure/clusters/home/apps"
+
+homelab_domain: "the-coding-lab.com"
+imdb_clone_domain: "imdb-clone.the-coding-lab.com"

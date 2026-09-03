@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -eu
+
+if [ -n "${PYROSCOPE_SERVER_ADDRESS:-}" ]; then
+  exec java \
+    --enable-native-access=ALL-UNNAMED \
+    -javaagent:/opt/pyroscope/pyroscope.jar \
+    -jar /app/app.jar
+fi
+
+exec java -jar /app/app.jar

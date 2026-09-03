@@ -1,0 +1,16 @@
+{
+  "short_name": "IMDb Clone",
+  "name": "IMDb Clone — Discover, rate, remember",
+  "icons": [
+    {
+      "src": "/brand-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0e1626",
+  "background_color": "#0b111d"
+}

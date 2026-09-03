@@ -1,0 +1,11 @@
+
+### watch a movie
+PUT {{protocol}}{{host}}:{{port}}/api/watched-movie/2872718/watch
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+
+### delete watched movie
+DELETE {{protocol}}{{host}}:{{port}}/api/watched-movie/2872718
+Authorization: Bearer {{userToken}}
+Content-Type: application/json

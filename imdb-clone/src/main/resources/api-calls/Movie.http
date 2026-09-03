@@ -1,0 +1,58 @@
+
+### get 1 movie by id
+GET {{protocol}}{{host}}:{{port}}/api/movie/2872718
+Content-Type: application/json
+
+
+### get multiple movies by an array of ids
+POST {{protocol}}{{host}}:{{port}}/api/movie/get-movies?page=0&size=5
+Content-Type: application/json
+
+{
+  "movieIds": [1457767, 1392190, 942385]
+}
+
+
+### add new movie to db
+POST {{protocol}}{{host}}:{{port}}/api/movie/create-movie
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "primaryTitle": "My Test Movie",
+  "originalTitle": "My Test Movie",
+  "startYear": 2024,
+  "endYear": 2025,
+  "runtimeMinutes": 118,
+  "movieGenre": ["ANIMATION", "MYSTERY"],
+  "movieType": "TV_MOVIE",
+  "adult": false
+}
+
+
+### update existing movie
+PUT {{protocol}}{{host}}:{{port}}/api/movie/5606665
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "primaryTitle": "My Test Movie update",
+  "originalTitle": "My Test Movie update",
+  "startYear": 2018,
+  "endYear": null,
+  "runtimeMinutes": 118,
+  "movieGenre": ["ANIMATION", "HORROR"],
+  "movieType": "TV_MOVIE",
+  "adult": true
+}
+
+
+### delete movie
+DELETE {{protocol}}{{host}}:{{port}}/api/movie/5606665
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+
+### search for movie by primaryTitle
+GET {{protocol}}{{host}}:{{port}}/api/movie/search/My Test Movie?page=0&size=10
+Content-Type: application/json

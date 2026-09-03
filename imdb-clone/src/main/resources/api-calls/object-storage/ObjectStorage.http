@@ -1,0 +1,48 @@
+
+### store movie image
+POST {{protocol}}{{host}}:{{port}}/api/file-storage/movie/2872718
+Authorization: Bearer {{adminToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="image"; filename="raw-movie-image.jpg"
+
+< ./raw-movie-image.jpg
+--boundary--
+
+
+### show stored movie image
+GET http://192.168.178.49:9000/imdb-clone/movies/XcqwH4yMsw7D9UolxzrIyqkMVR0ADp_size_600x900.jpg
+Content-Type: image/jpeg
+
+
+### show stored movie image
+GET http://localhost:9000/imdb-clone/movies/XcqwH4yMsw7D9UolxzrIyqkMVR0ADp_size_600x900.jpg
+Content-Type: image/jpeg
+
+
+### delete movie image
+DELETE {{protocol}}{{host}}:{{port}}/api/file-storage/movie/2872718
+Authorization: Bearer {{adminToken}}
+
+
+### store user profile photo
+POST {{protocol}}{{host}}:{{port}}/api/file-storage/profile-photo
+Authorization: Bearer {{userToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="image"; filename="raw-profile-photo.jpeg"
+
+< ./filestorage/raw-profile-photo.jpeg
+--boundary--
+
+
+### show stored user profile photo
+GET http://192.168.178.49:9000/imdb-clone/profile-photos/2lzwuazhzQXY8LHHF8tA3crJYbIyU3_size_120x120.jpg
+Content-Type: image/jpeg
+
+
+### delete user profile photo
+DELETE {{protocol}}{{host}}:{{port}}/api/file-storage/profile-photo
+Authorization: Bearer {{userToken}}

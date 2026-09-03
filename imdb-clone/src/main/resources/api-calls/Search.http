@@ -1,0 +1,34 @@
+### search movies with filters
+POST {{protocol}}{{host}}:{{port}}/api/search/movies?query=it&page=0&size=20
+Content-Type: application/json
+
+{
+  "movieType": "MOVIE",
+  "movieGenre": ["HORROR"],
+  "minStartYear": 2010,
+  "maxStartYear": 2022,
+  "minRuntimeMinutes": 80,
+  "maxRuntimeMinutes": 230
+}
+
+
+### search movies by title
+POST {{protocol}}{{host}}:{{port}}/api/search/movies?query=Smultronstället&page=0&size=20
+Content-Type: application/json
+
+{}
+
+
+### homepage drama carousel
+POST {{protocol}}{{host}}:{{port}}/api/search/movies?query=&page=0&size=20
+Content-Type: application/json
+
+{
+  "movieGenre": ["DRAMA"],
+  "minStartYear": 1990
+}
+
+
+### reindex movies from PostgreSQL into OpenSearch
+POST {{protocol}}{{host}}:{{port}}/api/search/movies/reindex
+Authorization: Bearer {{adminToken}}

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Generate a random password
+generate_password() {
+  length=$1
+  openssl rand -base64 $((length * 3/4)) | tr -dc 'A-Za-z0-9!@#$%^&*()+' | head -c $length
+}
+
+POSTGRESQL_USERNAME_ENV_VAR=postgres_user
+POSTGRESQL_PASSWORD_ENV_VAR=$(generate_password 16)
+
+OBJECT_STORAGE_ACCESS_KEY_ENV_VAR=$(generate_password 12)
+OBJECT_STORAGE_SECRET_KEY_ENV_VAR=$(generate_password 16)
+
+JWT_SECRET_ENV_VAR=$(generate_password 88)
+
+FRONTEND_APP_ADDRESS_ENV_VAR=https://imdb-clone.the-coding-lab.com
+BACKEND_APP_ADDRESS_ENV_VAR=https://backend.imdb-clone.the-coding-lab.com
+OBJECT_STORAGE_ADDRESS_ENV_VAR=https://object-storage.imdb-clone.the-coding-lab.com
+
+MAIL_USERNAME_ENV_VAR=your-own-email@email.com
+MAIL_PASSWORD_ENV_VAR=your-own-password
+
+# Output to .env
+cat > .env << EOL
+# PostgreSQL:
+POSTGRESQL_USERNAME_ENV_VAR=$POSTGRESQL_USERNAME_ENV_VAR
+POSTGRESQL_PASSWORD_ENV_VAR=$POSTGRESQL_PASSWORD_ENV_VAR
+
+# Object Storage:
+OBJECT_STORAGE_ACCESS_KEY_ENV_VAR=$OBJECT_STORAGE_ACCESS_KEY_ENV_VAR
+OBJECT_STORAGE_SECRET_KEY_ENV_VAR=$OBJECT_STORAGE_SECRET_KEY_ENV_VAR
+
+# Spring Boot Backend:
+FRONTEND_APP_ADDRESS_ENV_VAR=$FRONTEND_APP_ADDRESS_ENV_VAR
+BACKEND_APP_ADDRESS_ENV_VAR=$BACKEND_APP_ADDRESS_ENV_VAR
+OBJECT_STORAGE_ADDRESS_ENV_VAR=$OBJECT_STORAGE_ADDRESS_ENV_VAR
+
+MAIL_USERNAME_ENV_VAR=$MAIL_USERNAME_ENV_VAR
+MAIL_PASSWORD_ENV_VAR=$MAIL_PASSWORD_ENV_VAR
+
+JWT_SECRET_ENV_VAR=$JWT_SECRET_ENV_VAR
+EOL
+
+echo "Credentials saved to .env"

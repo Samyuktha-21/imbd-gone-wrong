@@ -1,0 +1,35 @@
+
+### get specific comment by id
+GET {{protocol}}{{host}}:{{port}}/api/comment/1
+Content-Type: application/json
+
+
+### get all comments of a movie
+GET {{protocol}}{{host}}:{{port}}/api/comment/120382/comments
+Content-Type: application/json
+
+
+### comment a movie
+POST {{protocol}}{{host}}:{{port}}/api/comment/120382
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "message": "Jim Carrey's best movie!"
+}
+
+
+### update existing comment
+PUT {{protocol}}{{host}}:{{port}}/api/comment/1
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "message": "Updated comment text"
+}
+
+
+### delete comment by id
+DELETE {{protocol}}{{host}}:{{port}}/api/comment/6
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json

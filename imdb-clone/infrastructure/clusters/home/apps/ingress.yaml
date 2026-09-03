@@ -1,0 +1,125 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: imdb-clone-concierge-public
+  namespace: imdb-clone
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+    traefik.ingress.kubernetes.io/router.middlewares: imdb-clone-imdb-clone-concierge-rate-limit@kubernetescrd,imdb-clone-imdb-clone-concierge-inflight@kubernetescrd,imdb-clone-imdb-clone-concierge-strip-prefix@kubernetescrd,imdb-clone-imdb-clone-security-headers@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - imdb-clone.the-coding-lab.com
+      secretName: imdb-clone-public-tls
+  rules:
+    - host: imdb-clone.the-coding-lab.com
+      http:
+        paths:
+          - path: /concierge-api/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: imdb-clone-agent
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: imdb-clone-public
+  namespace: imdb-clone
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: imdb-clone-imdb-clone-public-rate-limit@kubernetescrd,imdb-clone-imdb-clone-security-headers@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - imdb-clone.the-coding-lab.com
+        - backend.imdb-clone.the-coding-lab.com
+      secretName: imdb-clone-public-tls
+  rules:
+    - host: imdb-clone.the-coding-lab.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: imdb-clone-backend
+                port:
+                  name: http
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: imdb-clone-backend
+                port:
+                  name: http
+          - path: /login/oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: imdb-clone-backend
+                port:
+                  name: http
+          - path: /webauthn
+            pathType: Prefix
+            backend:
+              service:
+                name: imdb-clone-backend
+                port:
+                  name: http
+          - path: /login/webauthn
+            pathType: Prefix
+            backend:
+              service:
+                name: imdb-clone-backend
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: imdb-clone-frontend
+                port:
+                  name: http
+    - host: backend.imdb-clone.the-coding-lab.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: imdb-clone-backend
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: imdb-clone-rustfs-public
+  namespace: databases
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: databases-imdb-clone-public-rate-limit@kubernetescrd,databases-imdb-clone-security-headers@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - object-storage.imdb-clone.the-coding-lab.com
+      secretName: imdb-clone-object-storage-tls
+  rules:
+    - host: object-storage.imdb-clone.the-coding-lab.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: imdb-clone-rustfs
+                port:
+                  name: endpoint

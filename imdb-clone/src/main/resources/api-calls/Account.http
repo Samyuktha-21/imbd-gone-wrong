@@ -1,0 +1,73 @@
+
+### get current user
+GET {{protocol}}{{host}}:{{port}}/api/account/me
+Authorization: Bearer {{userToken}}
+
+
+### get current user's editable profile
+GET {{protocol}}{{host}}:{{port}}/api/account/me/profile
+Authorization: Bearer {{userToken}}
+
+
+### get account-profile
+GET {{protocol}}{{host}}:{{port}}/api/account/les_grossman/profile
+Content-Type: application/json
+
+
+### get comments of user
+GET {{protocol}}{{host}}:{{port}}/api/account/les_grossman/comments?page=0&size=10
+Content-Type: application/json
+
+
+### get watchlist of user
+GET {{protocol}}{{host}}:{{port}}/api/account/les_grossman/watchlist?page=0&size=30
+Content-Type: application/json
+
+
+### get ratings of user
+GET {{protocol}}{{host}}:{{port}}/api/account/les_grossman/ratings
+Content-Type: application/json
+
+
+### update account data
+PUT {{protocol}}{{host}}:{{port}}/api/account/kirk_lazarus
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Kirk",
+  "lastName": "Lazarus",
+  "phone": "0152/8273654",
+  "bio": "Man, I don't drop character 'till I done the DVD commentary.",
+  "birthday": "1965-04-04"
+}
+
+
+### delete account
+DELETE {{protocol}}{{host}}:{{port}}/api/account/kirk_lazarus
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+
+### create new account, without email confirmation (simple test acc generation)
+POST {{protocol}}{{host}}:{{port}}/api/account/add-account
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "kirk_lazarus",
+  "email": "kirk.lazarus@gmail.com",
+  "password": "Encrypted!Pa55worD"
+}
+
+
+### give account ADMIN permission
+PUT {{protocol}}{{host}}:{{port}}/api/account/kirk_lazarus/give-admin
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+
+### remove ADMIN permission of an account
+PUT {{protocol}}{{host}}:{{port}}/api/account/kirk_lazarus/take-admin
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json

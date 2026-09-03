@@ -1,0 +1,265 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: observability-dashboard-cluster-logs
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: IMDB Clone
+data:
+  cluster-logs.json: |-
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": false,
+      "graphTooltip": 1,
+      "links": [
+        {
+          "asDropdown": false,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": true,
+          "tags": [],
+          "targetBlank": false,
+          "title": "Operations",
+          "tooltip": "Open Operations with the current time range",
+          "type": "link",
+          "url": "/d/imdb-operations-overview/imdb-clone-operations-overview"
+        },
+        {
+          "asDropdown": false,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": true,
+          "tags": [],
+          "targetBlank": false,
+          "title": "Backend",
+          "tooltip": "Open Backend with the current time range",
+          "type": "link",
+          "url": "/d/imdb-backend-overview/imdb-clone-backend"
+        },
+        {
+          "asDropdown": false,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": true,
+          "tags": [],
+          "targetBlank": false,
+          "title": "Frontend",
+          "tooltip": "Open Frontend with the current time range",
+          "type": "link",
+          "url": "/d/imdb-frontend-overview/imdb-clone-frontend"
+        },
+        {
+          "asDropdown": false,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": true,
+          "tags": [],
+          "targetBlank": false,
+          "title": "Concierge",
+          "tooltip": "Open Concierge with the current time range",
+          "type": "link",
+          "url": "/d/imdb-agent-overview/imdb-clone-movie-concierge"
+        },
+        {
+          "asDropdown": false,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": true,
+          "tags": [],
+          "targetBlank": false,
+          "title": "PostgreSQL",
+          "tooltip": "Open PostgreSQL with the current time range",
+          "type": "link",
+          "url": "/d/imdb-postgresql-overview/postgresql"
+        },
+        {
+          "asDropdown": false,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": true,
+          "tags": [],
+          "targetBlank": false,
+          "title": "Infrastructure",
+          "tooltip": "Open Infrastructure with the current time range",
+          "type": "link",
+          "url": "/d/imdb-system-overview/imdb-clone-system"
+        },
+        {
+          "asDropdown": false,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": true,
+          "tags": [],
+          "targetBlank": false,
+          "title": "Logs",
+          "tooltip": "Open Logs with the current time range",
+          "type": "link",
+          "url": "/d/imdb-clone-cluster-logs/cluster-logs"
+        },
+        {
+          "asDropdown": false,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": true,
+          "tags": [],
+          "targetBlank": false,
+          "title": "Traces",
+          "tooltip": "Open Traces with the current time range",
+          "type": "link",
+          "url": "/a/grafana-exploretraces-app/"
+        },
+        {
+          "asDropdown": false,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": true,
+          "tags": [],
+          "targetBlank": false,
+          "title": "Profiles",
+          "tooltip": "Open Profiles with the current time range",
+          "type": "link",
+          "url": "/a/grafana-pyroscope-app/explore"
+        }
+      ],
+      "panels": [
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "gridPos": {"h": 7, "w": 16, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"legend": {"displayMode": "table", "placement": "right", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [
+            {
+              "datasource": {"type": "loki", "uid": "loki"},
+              "editorMode": "code",
+              "expr": "sum(count_over_time({cluster=\"home-k3s\", namespace=~\"$namespace\", app=~\"$app\"}[$__auto])) by (namespace)",
+              "legendFormat": "{{namespace}}",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Log volume by namespace",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "gridPos": {"h": 7, "w": 8, "x": 16, "y": 0},
+          "id": 2,
+          "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true},
+          "targets": [
+            {
+              "datasource": {"type": "loki", "uid": "loki"},
+              "editorMode": "code",
+              "expr": "{cluster=\"home-k3s\", namespace=~\"$namespace\", app=~\"$app\"} |~ \"(?i)error|exception|failed|critical\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Recent errors",
+          "type": "logs"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "gridPos": {"h": 12, "w": 16, "x": 0, "y": 7},
+          "id": 3,
+          "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": true, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true},
+          "targets": [
+            {
+              "datasource": {"type": "loki", "uid": "loki"},
+              "editorMode": "code",
+              "expr": "{cluster=\"home-k3s\", namespace=~\"$namespace\", app=~\"$app\", container=~\"$container\"} |~ \"$search\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Cluster workload logs",
+          "type": "logs"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "gridPos": {"h": 12, "w": 8, "x": 16, "y": 7},
+          "id": 4,
+          "options": {"dedupStrategy": "none", "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true},
+          "targets": [
+            {
+              "datasource": {"type": "loki", "uid": "loki"},
+              "editorMode": "code",
+              "expr": "{cluster=\"home-k3s\", job=\"integrations/kubernetes/eventhandler\"}",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Kubernetes events",
+          "type": "logs"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 41,
+      "tags": ["imdb-clone", "logs", "kubernetes"],
+      "templating": {
+        "list": [
+          {
+            "allValue": ".*",
+            "current": {"text": "All", "value": "$__all"},
+            "datasource": {"type": "loki", "uid": "loki"},
+            "definition": "label_values(namespace)",
+            "includeAll": true,
+            "label": "Namespace",
+            "name": "namespace",
+            "query": "label_values(namespace)",
+            "refresh": 1,
+            "type": "query"
+          },
+          {
+            "allValue": ".*",
+            "current": {"text": "All", "value": "$__all"},
+            "datasource": {"type": "loki", "uid": "loki"},
+            "definition": "label_values({namespace=~\"$namespace\"}, app)",
+            "includeAll": true,
+            "label": "Application",
+            "name": "app",
+            "query": "label_values({namespace=~\"$namespace\"}, app)",
+            "refresh": 1,
+            "type": "query"
+          },
+          {
+            "allValue": ".*",
+            "current": {"text": "All", "value": "$__all"},
+            "datasource": {"type": "loki", "uid": "loki"},
+            "definition": "label_values({namespace=~\"$namespace\", app=~\"$app\"}, container)",
+            "includeAll": true,
+            "label": "Container",
+            "name": "container",
+            "query": "label_values({namespace=~\"$namespace\", app=~\"$app\"}, container)",
+            "refresh": 1,
+            "type": "query"
+          },
+          {
+            "current": {"text": ".*", "value": ".*"},
+            "label": "Search regex",
+            "name": "search",
+            "query": ".*",
+            "type": "textbox"
+          }
+        ]
+      },
+      "time": {"from": "now-1h", "to": "now"},
+      "timezone": "browser",
+      "title": "Cluster Logs",
+      "uid": "imdb-clone-cluster-logs",
+      "version": 1
+    }

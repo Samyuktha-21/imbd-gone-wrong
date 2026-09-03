@@ -1,0 +1,215 @@
+import {
+  GetRatingLibrarySortEnum,
+  MovieRecord,
+  PagedResponseRatingRecord,
+  RatingLibraryResponse,
+} from "../../../../client/movies/generator-output";
+import { accountEngagementApi } from "../../../../shared/api/moviesApi";
+import { moviesApi } from "../../../../shared/api/moviesApi";
+
+type UserRatingForMovieParams = {
+  movieId: number | null;
+  username: string | null;
+};
+
+type CurrentUserRatedMoviesParams = {
+  page: number;
+  size: number;
+  username: string | null;
+};
+
+export type RatedMovie = {
+  movie: MovieRecord;
+  rating: number;
+};
+
+export type RatedMoviesResponse = Omit<PagedResponseRatingRecord, "content"> & {
+  content: RatedMovie[];
+};
+
+export type RatingLibrarySort =
+  | "score_desc"
+  | "score_asc"
+  | "imdb_desc"
+  | "imdb_asc"
+  | "title_asc";
+
+const ratingLibrarySortValues: Record<RatingLibrarySort, GetRatingLibrarySortEnum> = {
+  score_desc: GetRatingLibrarySortEnum.ScoreDesc,
+  score_asc: GetRatingLibrarySortEnum.ScoreAsc,
+  imdb_desc: GetRatingLibrarySortEnum.ImdbDesc,
+  imdb_asc: GetRatingLibrarySortEnum.ImdbAsc,
+  title_asc: GetRatingLibrarySortEnum.TitleAsc,
+};
+
+const RATINGS_PAGE_SIZE = 30;
+
+const fetchUserRatingForMovie = async ({
+  movieId,
+  username,
+}: {
+  movieId: number;
+  username: string;
+}): Promise<number | null> => {
+  let page = 0;
+  let isLast = false;
+  while (!isLast) {
+    const response = await accountEngagementApi.getRatingsByAccount(
+      username,
+      page,
+      RATINGS_PAGE_SIZE,
+    );
+    const found = (response.data.content ?? []).find(
+      (rating) => rating.movieId === movieId,
+    );
+    if (found?.rating !== undefined) {
+      return found.rating;
+    }
+    isLast = response.data.last ?? true;
+    page += 1;
+  }
+  return null;
+};
+
+const getCurrentUserRatedMovies = async ({
+  page,
+  size,
+  username,
+}: CurrentUserRatedMoviesParams): Promise<RatedMoviesResponse> => {
+  const normalizedUsername = username?.trim();
+
+  if (!normalizedUsername) {
+    throw new Error("Username is required to load rated movies.");
+  }
+
+  const ratingsResponse = await accountEngagementApi.getRatingsByAccount(
+    normalizedUsername,
+    page,
+    size,
+  );
+  const ratings = ratingsResponse.data;
+  const ratedMovieIds = (ratings.content ?? [])
+    .map((rating) => rating.movieId)
+    .filter((movieId): movieId is number => movieId !== undefined);
+
+  if (ratedMovieIds.length === 0) {
+    return {
+      ...ratings,
+      content: [],
+    };
+  }
+
+  const moviesResponse = await moviesApi.getMoviesByIds(
+    { movieIds: ratedMovieIds },
+    0,
+    ratedMovieIds.length,
+  );
+  const moviesById = new Map(
+    (moviesResponse.data.content ?? [])
+      .filter((movie) => movie.id !== undefined)
+      .map((movie) => [movie.id, movie]),
+  );
+
+  return {
+    ...ratings,
+    content: (ratings.content ?? [])
+      .map((rating) => {
+        if (rating.movieId === undefined || rating.rating === undefined) {
+          return null;
+        }
+        const movie = moviesById.get(rating.movieId);
+        return movie ? { movie, rating: rating.rating } : null;
+      })
+      .filter((ratedMovie): ratedMovie is RatedMovie => ratedMovie !== null),
+  };
+};
+
+export const ratingQueries = {
+  library: ({
+    size,
+    sort,
+    username,
+  }: {
+    size: number;
+    sort: RatingLibrarySort;
+    username: string | null;
+  }) => {
+    const normalizedUsername = username?.trim() || null;
+
+    return {
+      enabled: normalizedUsername !== null,
+      getNextPageParam: (lastPage: RatingLibraryResponse) =>
+        lastPage.items?.last
+          ? undefined
+          : (lastPage.items?.page ?? 0) + 1,
+      initialPageParam: 0,
+      queryFn: async ({ pageParam }: { pageParam: number }) => {
+        if (normalizedUsername === null) {
+          throw new Error("Username is required to load the ratings library.");
+        }
+        return (
+          await accountEngagementApi.getRatingLibrary(
+            normalizedUsername,
+            pageParam,
+            size,
+            ratingLibrarySortValues[sort],
+          )
+        ).data;
+      },
+      queryKey: ["rating", "library", normalizedUsername, sort, size] as const,
+    };
+  },
+
+  currentUserMovies: ({
+    page,
+    size,
+    username,
+  }: CurrentUserRatedMoviesParams) => {
+    const normalizedUsername = username?.trim() || null;
+
+    return {
+      enabled: normalizedUsername !== null,
+      queryFn: () =>
+        getCurrentUserRatedMovies({
+          page,
+          size,
+          username: normalizedUsername,
+        }),
+      queryKey: [
+        "rating",
+        "current-user",
+        normalizedUsername,
+        "movies",
+        page,
+        size,
+      ] as const,
+    };
+  },
+
+  userRatingForMovie: ({ movieId, username }: UserRatingForMovieParams) => {
+    const normalizedUsername = username?.trim() || null;
+    const enabled = movieId !== null && normalizedUsername !== null;
+
+    return {
+      enabled,
+      queryFn: () => {
+        if (movieId === null || normalizedUsername === null) {
+          throw new Error(
+            "Movie id and username are required to load the user rating.",
+          );
+        }
+        return fetchUserRatingForMovie({
+          movieId,
+          username: normalizedUsername,
+        });
+      },
+      queryKey: [
+        "rating",
+        "current-user",
+        normalizedUsername,
+        "movie",
+        movieId,
+      ] as const,
+    };
+  },
+};

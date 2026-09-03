@@ -1,0 +1,278 @@
+# Direct requests to the OpenSearch instance
+
+# how to generate the base64 credentials if security is enabled
+# echo -n 'username:password' | base64
+
+### current version
+GET {{protocol}}{{host}}:{{port}}
+
+
+### cluster health
+GET {{protocol}}{{host}}:{{port}}/_cluster/health
+
+
+### cluster state and some statistics toward movies index
+GET {{protocol}}{{host}}:{{port}}/_cat/indices
+
+
+### properties of each field in the document of the index
+GET {{protocol}}{{host}}:{{port}}/movies
+
+
+### count number of documents in an index
+GET {{protocol}}{{host}}:{{port}}/movies/_count
+
+
+### search for by document id
+GET {{protocol}}{{host}}:{{port}}/movies/_doc/109830
+
+
+### simple match search
+GET {{protocol}}{{host}}:{{port}}/movies/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "match": {
+      "primaryTitle": "The"
+    }
+  }
+}
+
+
+### multi match search
+GET {{protocol}}{{host}}:{{port}}/movies/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "multi_match": {
+      "query": "Cast Away",
+      "type": "most_fields",
+      "fields": ["primaryTitle", "originalTitle"]
+    }
+  }
+}
+
+
+### simple search
+GET {{protocol}}{{host}}:{{port}}/movies/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": {
+          "primaryTitle": "It"
+        }}
+      ]
+    }
+  },
+  "from": 0,
+  "size": 2
+}
+
+
+### multi match search and boost based on imdbRatingCount
+GET {{protocol}}{{host}}:{{port}}/movies/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "function_score": {
+      "query": {
+        "multi_match": {
+          "query": "it",
+          "type": "most_fields",
+          "fields": ["primaryTitle", "originalTitle"]
+        }
+      },
+      "functions": [
+        {
+          "field_value_factor": {
+            "field": "imdbRatingCount",
+            "factor": 0.0002,
+            "modifier": "log1p"
+          }
+        }
+      ],
+      "score_mode": "multiply"
+    }
+  }
+}
+
+
+### complexer search (results are filtrated)
+GET {{protocol}}{{host}}:{{port}}/movies/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "multi_match": {
+            "fields": [
+              "primaryTitle",
+              "originalTitle"
+            ],
+            "query": "it",
+            "type": "most_fields"
+          }
+        }
+      ],
+      "filter": [
+        {
+          "match": {
+            "movieGenre": {
+              "query": "HORROR"
+            }
+          }
+        },
+        {
+          "match": {
+            "movieType": {
+              "query": "MOVIE"
+            }
+          }
+        },
+        {
+          "range": {
+            "startYear": {
+              "gte": 2010,
+              "lte": 2022
+            }
+          }
+        },
+        {
+          "range": {
+            "runtimeMinutes": {
+              "gte": 80,
+              "lte": 230
+            }
+          }
+        }
+      ]
+    }
+  },
+  "from": 0,
+  "size": 20
+}
+
+### current search extended with boosting:
+GET {{protocol}}{{host}}:{{port}}/movies/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "function_score": {
+            "query": {
+              "multi_match": {
+                "fields": [
+                  "primaryTitle",
+                  "originalTitle"
+                ],
+                "query": "it",
+                "type": "most_fields"
+              }
+            },
+            "functions": [
+              {
+                "field_value_factor": {
+                  "field": "imdbRatingCount",
+                  "factor": 0.0002,
+                  "modifier": "log1p"
+                }
+              }
+            ],
+            "score_mode": "multiply"
+          }
+        }
+      ],
+      "filter": [
+        {
+          "match": {
+            "movieGenre": {
+              "query": "HORROR"
+            }
+          }
+        },
+        {
+          "match": {
+            "movieType": {
+              "query": "MOVIE"
+            }
+          }
+        },
+        {
+          "range": {
+            "startYear": {
+              "gte": 2010,
+              "lte": 2022
+            }
+          }
+        },
+        {
+          "range": {
+            "runtimeMinutes": {
+              "gte": 80,
+              "lte": 230
+            }
+          }
+        }
+      ]
+    }
+  },
+  "from": 0,
+  "size": 20
+}
+
+
+### aggregations: avg rating per genre
+GET {{protocol}}{{host}}:{{port}}/movies/_search
+Content-Type: application/json
+
+{
+  "size": 0,
+  "aggs": {
+    "genres": {
+      "terms": {
+        "field": "movieGenre.keyword",
+        "size": 20
+      },
+      "aggs": {
+        "avg_rating": {
+          "avg": {
+            "field": "imdbRating"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+### delete document by id
+DELETE {{protocol}}{{host}}:{{port}}/movies/_doc/816692
+
+
+### delete whole index
+DELETE {{protocol}}{{host}}:{{port}}/movies
+
+
+### if watermark is reached
+PUT {{protocol}}{{host}}:{{port}}/_cluster/settings
+Content-Type: application/json
+
+{
+  "transient": {
+    "cluster.routing.allocation.disk.watermark.low": "85%",
+    "cluster.routing.allocation.disk.watermark.high": "90%",
+    "cluster.routing.allocation.disk.watermark.flood_stage": "95%",
+    "cluster.info.update.interval": "1m"
+  }
+}

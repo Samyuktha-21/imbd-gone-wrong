@@ -1,0 +1,74 @@
+---
+- name: Persist inotify capacity for cluster log streaming
+  ansible.builtin.copy:
+    content: |
+      # Managed by Ansible for k3s and container log streaming.
+      fs.inotify.max_user_instances = {{ k3s_inotify_max_user_instances }}
+    dest: /etc/sysctl.d/99-k3s-inotify.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Read current inotify instance capacity
+  ansible.builtin.command:
+    argv:
+      - /usr/sbin/sysctl
+      - -n
+      - fs.inotify.max_user_instances
+  register: k3s_inotify_current
+  changed_when: false
+
+- name: Apply inotify capacity for cluster log streaming
+  ansible.builtin.command:
+    argv:
+      - /usr/sbin/sysctl
+      - -w
+      - "fs.inotify.max_user_instances={{ k3s_inotify_max_user_instances }}"
+  when: (k3s_inotify_current.stdout | int) != (k3s_inotify_max_user_instances | int)
+  changed_when: true
+
+- name: Download pinned k3s install script
+  ansible.builtin.get_url:
+    url: "{{ k3s_install_script_url }}"
+    dest: /tmp/install-k3s.sh
+    mode: "0755"
+
+- name: Check installed k3s version
+  ansible.builtin.command: /usr/local/bin/k3s --version
+  register: k3s_installed_version
+  changed_when: false
+  failed_when: false
+
+- name: Install k3s server
+  ansible.builtin.command: /tmp/install-k3s.sh
+  environment:
+    INSTALL_K3S_VERSION: "{{ k3s_version }}"
+    INSTALL_K3S_EXEC: "server --node-name {{ k3s_node_name }} --write-kubeconfig-mode 644"
+    K3S_KUBECONFIG_MODE: "644"
+  when: k3s_installed_version.rc != 0 or k3s_version not in k3s_installed_version.stdout
+
+- name: Ensure k3s service is enabled and running
+  ansible.builtin.systemd:
+    name: k3s
+    enabled: true
+    state: started
+
+- name: Wait for Kubernetes API
+  ansible.builtin.command: /usr/local/bin/kubectl get nodes
+  register: kubectl_get_nodes
+  changed_when: false
+  retries: 30
+  delay: 5
+  until: kubectl_get_nodes.rc == 0
+  environment:
+    KUBECONFIG: "{{ k3s_kubeconfig }}"
+
+- name: Wait for k3s node to become Ready
+  ansible.builtin.command: >
+    /usr/local/bin/kubectl wait
+    --for=condition=Ready
+    node/{{ k3s_node_name }}
+    --timeout=180s
+  changed_when: false
+  environment:
+    KUBECONFIG: "{{ k3s_kubeconfig }}"

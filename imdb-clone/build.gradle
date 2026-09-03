@@ -1,0 +1,254 @@
+plugins {
+	id 'java'
+	id 'idea'
+	id 'org.springframework.boot' version "${springBootVersion}"
+	id 'jacoco'
+	id 'io.spring.dependency-management' version '1.1.7'
+	id 'com.github.ben-manes.versions' version '0.54.0'
+	id 'com.diffplug.spotless' version '8.7.0'
+	id 'net.ltgt.errorprone' version '5.1.0'
+}
+
+group = 'com.thecodinglab'
+version = '1.0.0'
+
+tasks.named('check') {
+	dependsOn 'spotlessCheck', 'integrationTest', 'jacocoTestCoverageVerification'
+}
+
+
+idea {
+	project {
+		languageLevel = JavaVersion.VERSION_25
+	}
+	module {
+		jdkName = JavaVersion.VERSION_25
+	}
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.compilerArgs += ['-Xlint:all,-processing,-serial', '-Werror']
+	options.errorprone.disableWarningsInGeneratedCode = true
+}
+
+repositories {
+	mavenCentral()
+}
+
+configurations {
+	pyroscopeAgent {
+		canBeConsumed = false
+		canBeResolved = true
+		transitive = false
+	}
+}
+
+dependencyLocking {
+	lockAllConfigurations()
+	lockMode = LockMode.STRICT
+}
+
+dependencyManagement {
+	imports {
+		mavenBom 'org.springframework.modulith:spring-modulith-bom:2.1.0'
+		mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+		mavenBom "software.amazon.awssdk:bom:${awsSdkVersion}"
+	}
+}
+
+spotless {
+	java {
+		target 'src/main/java/**/*.java', 'src/test/java/**/*.java'
+		targetExclude 'build/**', 'frontend/**'
+		targetExclude 'src/main/java/**/payload/*.java', 'src/main/java/**/payload/**/*.java'
+		importOrder()
+		removeUnusedImports()
+		googleJavaFormat('1.35.0')
+		trimTrailingWhitespace()
+	}
+}
+
+dependencies {
+	pyroscopeAgent 'io.pyroscope:agent:2.9.1'
+
+	errorprone 'com.google.errorprone:error_prone_core:2.50.0'
+	errorprone 'com.uber.nullaway:nullaway:0.13.7'
+	compileOnly 'org.jspecify:jspecify:1.0.0'
+	testCompileOnly 'org.jspecify:jspecify:1.0.0'
+
+	//-- Improved developing
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	//-- create persistence containers with startup
+	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+
+	//-- Servlet
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'
+
+	//-- Validation
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	//-- Documentation - Swagger UI
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3'
+
+	//-- Mapping
+	implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+	annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+	//-- Rel. Database
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-flyway'
+	runtimeOnly 'org.flywaydb:flyway-database-postgresql'
+	runtimeOnly 'org.postgresql:postgresql'
+
+	//-- SearchEngine
+	implementation "org.opensearch.client:spring-data-opensearch-starter:${springDataOpenSearchVersion}"
+	implementation "org.opensearch.client:opensearch-java:${opensearchJavaVersion}"
+	implementation 'org.springframework.ai:spring-ai-model'
+
+	//-- File Storage
+	implementation 'software.amazon.awssdk:s3'
+	implementation 'software.amazon.awssdk:url-connection-client'
+
+	//-- Email
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
+	//-- Security
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	implementation 'org.springframework.security:spring-security-webauthn'
+	implementation 'org.springframework.session:spring-session-jdbc'
+	implementation 'com.bucket4j:bucket4j_jdk17-core:8.19.0'
+	implementation 'com.github.ben-manes.caffeine:caffeine'
+
+	//-- Monitoring
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-opentelemetry'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+
+	//-- Modular architecture
+	implementation 'org.springframework.modulith:spring-modulith-starter-core'
+
+	//-- Durable task scheduling
+	implementation 'com.github.kagkarlsson:db-scheduler-spring-boot-4-starter:16.12.0'
+
+	//-- Logging
+	implementation 'org.springframework.boot:spring-boot-starter-logging'
+	implementation 'net.logstash.logback:logstash-logback-encoder:9.0'
+
+	//-- Testing
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.assertj:assertj-core'
+	testImplementation 'org.springframework.modulith:spring-modulith-starter-test'
+	testImplementation 'net.jqwik:jqwik:1.10.1'
+
+	testImplementation "org.testcontainers:testcontainers:${testContainersVersion}"
+	testImplementation "org.testcontainers:testcontainers-junit-jupiter:${testContainersVersion}"
+	testImplementation "org.testcontainers:testcontainers-postgresql:${testContainersVersion}"
+	testImplementation "org.opensearch:opensearch-testcontainers:${opensearchTestcontainersVersion}"
+
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.register('copyPyroscopeAgent', Copy) {
+	from configurations.pyroscopeAgent
+	into layout.buildDirectory.dir('pyroscope')
+	rename { 'pyroscope.jar' }
+}
+
+tasks.named('compileJava') {
+	options.errorprone {
+		error 'NullAway'
+		option 'NullAway:OnlyNullMarked', 'true'
+	}
+}
+
+tasks.named('compileTestJava') {
+	options.errorprone.disable 'NullAway'
+}
+
+tasks.named('test') {
+	description = 'Runs fast backend tests without external infrastructure.'
+	useJUnitPlatform {
+		excludeTags 'integration'
+	}
+}
+
+tasks.register('liveSearchEvaluation', Test) {
+	description = 'Evaluates live search relevance against the seeded local corpus.'
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	environment 'IMDB_CLONE_LIVE_SEARCH_EVALUATION', 'true'
+	useJUnitPlatform {
+		includeTags 'live-search-evaluation'
+	}
+}
+
+def integrationTest = tasks.register('integrationTest', Test) {
+	description = 'Runs backend integration tests against external infrastructure.'
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform {
+		includeTags 'integration'
+	}
+	shouldRunAfter tasks.named('test')
+}
+
+tasks.register('searchRelevanceEvaluation', Test) {
+	description = 'Reports deterministic baseline metrics from the versioned search relevance fixture.'
+	group = LifecycleBasePlugin.VERIFICATION_GROUP
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	testLogging {
+		showStandardStreams = true
+	}
+	useJUnitPlatform {
+		includeTags 'search-evaluation'
+	}
+}
+
+jacoco {
+	toolVersion = "0.8.14"
+}
+
+jacocoTestReport {
+	dependsOn test, integrationTest
+	executionData tasks.withType(Test)
+	reports {
+		xml.required = true
+	}
+}
+
+jacocoTestCoverageVerification {
+	dependsOn test
+	executionData tasks.named('test').get()
+	violationRules {
+		rule {
+			element = 'CLASS'
+			includes = [
+				'com.thecodinglab.imdbclone.engagement.api.RatingScore',
+				'com.thecodinglab.imdbclone.catalog.internal.search.query.MovieSearchRankFusion',
+				'com.thecodinglab.imdbclone.recommendation.internal.ContentRecommendationRanker'
+			]
+			limit {
+				counter = 'BRANCH'
+				value = 'COVEREDRATIO'
+				minimum = 1.0
+			}
+		}
+	}
+}
