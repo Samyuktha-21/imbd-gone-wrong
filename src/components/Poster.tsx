@@ -21,7 +21,7 @@ const Poster = ({ title }: PosterProps) => {
 
   return (
     <div
-      className="poster"
+      className="poster antiux-underwater"
       style={{
         backgroundImage: `linear-gradient(150deg, hsl(${hue} 46% 34%), hsl(${(hue + 42) % 360} 52% 15%))`,
       }}
