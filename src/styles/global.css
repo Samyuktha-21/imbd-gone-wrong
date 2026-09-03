@@ -85,6 +85,19 @@ body {
   font-size: 14px;
 }
 
+/*
+ * The search input is wrapped by the shatter gag, so the wrapper takes over
+ * the flex sizing the input used to own.
+ */
+.header-search-shatter {
+  flex: 1;
+  min-width: 120px;
+}
+
+.header-search-shatter .header-search {
+  width: 100%;
+}
+
 .header-actions {
   display: flex;
   align-items: center;

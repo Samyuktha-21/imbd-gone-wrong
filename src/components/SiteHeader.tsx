@@ -1,4 +1,4 @@
-import { RandomLanguageSwitch } from "../antiux";
+import { RandomLanguageSwitch, ShatterOnClick } from "../antiux";
 import type { LanguageCopy } from "../antiux";
 
 /**
@@ -55,20 +55,31 @@ const SiteHeader = () => (
     <nav className="site-nav" aria-label="Primary">
       {navItems.map((item, index) => (
         <button key={item.key} type="button">
-          {/* Staggered intervals so the labels never re-roll in unison. */}
+          {/*
+            Fast enough that a label can change while you are still reading
+            it. Staggered so they never re-roll in unison, which would read as
+            a deliberate site-wide switch rather than the nav coming apart.
+          */}
           <RandomLanguageSwitch
             translations={item.translations}
-            intervalMs={5000 + index * 1300}
+            intervalMs={900 + index * 220}
           />
         </button>
       ))}
     </nav>
-    <input
-      className="header-search"
-      type="search"
-      placeholder="Search IMDb"
-      aria-label="Search IMDb"
-    />
+    {/* Touch the search bar and it comes apart in your hands. */}
+    <ShatterOnClick
+      className="header-search-shatter"
+      label="Search bar shattered — drag the pieces back into place"
+      pieces={6}
+    >
+      <input
+        className="header-search"
+        type="search"
+        placeholder="Search IMDb"
+        aria-label="Search IMDb"
+      />
+    </ShatterOnClick>
     <div className="header-actions">
       <button type="button" className="button button--secondary">
         Watchlist

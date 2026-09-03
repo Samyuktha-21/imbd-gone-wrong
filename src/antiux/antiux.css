@@ -47,6 +47,64 @@
   filter: none;
 }
 
+/* ---------- shatter ---------- */
+
+.antiux-shatter {
+  position: relative;
+  display: block;
+}
+
+/* Hidden but still occupying space, so the row never reflows mid-shatter. */
+.antiux-shatter[data-shattered="true"] .antiux-shatter__intact {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.antiux-shatter__pieces {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  z-index: 2;
+}
+
+.antiux-shatter__piece {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background-color: var(--surface-raised, #232323);
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.16),
+    rgba(255, 255, 255, 0) 55%
+  );
+  cursor: grab;
+  touch-action: none;
+  transition: box-shadow 140ms ease-out;
+  /* Jagged edges so the pieces read as shards rather than tiles. */
+  clip-path: polygon(6% 0%, 100% 4%, 94% 100%, 0% 92%);
+}
+
+.antiux-shatter__piece:nth-child(even) {
+  clip-path: polygon(0% 5%, 96% 0%, 100% 95%, 4% 100%);
+}
+
+.antiux-shatter__piece:active {
+  cursor: grabbing;
+}
+
+.antiux-shatter__piece:focus-visible {
+  outline: 2px solid var(--imdb-gold, #f5c518);
+  outline-offset: 2px;
+}
+
+/* Snapped home: settles down and stops inviting a drag. */
+.antiux-shatter__piece[data-placed="true"] {
+  border-color: rgba(255, 255, 255, 0.12);
+  cursor: default;
+  opacity: 0.9;
+}
+
 /* ---------- math CAPTCHA gate ---------- */
 
 .antiux-captcha {

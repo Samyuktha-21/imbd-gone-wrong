@@ -3,6 +3,7 @@ export { default as FakeAdInterstitial } from "./components/FakeAdInterstitial";
 export { default as MathCaptchaGate } from "./components/MathCaptchaGate";
 export { default as MirroredText } from "./components/MirroredText";
 export { default as RandomLanguageSwitch } from "./components/RandomLanguageSwitch";
+export { default as ShatterOnClick } from "./components/ShatterOnClick";
 export { default as ShrinkingButton } from "./components/ShrinkingButton";
 export { default as UnderwaterDistortion } from "./components/UnderwaterDistortion";
 export {
@@ -19,6 +20,7 @@ export { useFakeAdCountdown } from "./hooks/useFakeAdCountdown";
 export { useYouTubePlayer } from "./hooks/useYouTubePlayer";
 export { useMathCaptcha, type MathCaptchaProblem } from "./hooks/useMathCaptcha";
 export { useProximityShrink } from "./hooks/useProximityShrink";
+export { useShatter, type Shard } from "./hooks/useShatter";
 export {
   useRandomLanguageSwitch,
   type LanguageCopy,
