@@ -7,6 +7,7 @@ import { ConciergeExperience } from "../features/concierge";
 import { queryClient } from "../shared/api/queryClient";
 import { bootstrapSession } from "../shared/auth/bootstrapSession";
 import { RouteMetrics } from "../shared/observability";
+import { SpotlightOverlay, SpotlightProvider } from "../shared/spotlight";
 import { appTheme } from "../theme";
 
 const AppProviders = ({ children }: { children: ReactNode }) => {
@@ -19,11 +20,14 @@ const AppProviders = ({ children }: { children: ReactNode }) => {
       <CssBaseline />
       <QueryClientProvider client={queryClient}>
         <SnackbarProvider maxSnack={3}>
-          <BrowserRouter>
-            <RouteMetrics />
-            {children}
-            <ConciergeExperience />
-          </BrowserRouter>
+          <SpotlightProvider>
+            <SpotlightOverlay />
+            <BrowserRouter>
+              <RouteMetrics />
+              {children}
+              <ConciergeExperience />
+            </BrowserRouter>
+          </SpotlightProvider>
         </SnackbarProvider>
       </QueryClientProvider>
     </ThemeProvider>
