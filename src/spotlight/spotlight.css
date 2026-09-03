@@ -30,10 +30,10 @@
    */
   background: radial-gradient(
     circle var(--spotlight-radius) at var(--spotlight-x) var(--spotlight-y),
-    rgba(0, 0, 0, 0) 0%,
-    rgba(0, 0, 0, 0) 74%,
-    rgba(0, 0, 0, 0.9) 91%,
-    rgb(0, 0, 0) 100%
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0) 74%,
+    rgba(255, 255, 255, 0.92) 91%,
+    rgb(255, 255, 255) 100%
   );
 }
 

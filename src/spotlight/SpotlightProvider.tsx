@@ -7,6 +7,7 @@ import {
   JUMP_INTERVAL_MS,
   JUMP_OFFSET_RANGE,
 } from "./spotlightConfig";
+import { registerSpotlightConsole } from "./spotlightConsole";
 import { readRadius, writePosition, writeRadius } from "./spotlightVars";
 import "./spotlight.css";
 
@@ -56,11 +57,14 @@ const SpotlightProvider = ({
   }, [flushPosition]);
 
   // Seed the custom properties before first paint so the page never flashes
-  // fully lit. This is the only write to the radius.
+  // fully lit. This is the only write to the radius the app performs; after
+  // this, it only ever changes if a user asks for it from devtools.
   useEffect(() => {
     writeRadius(DEFAULT_RADIUS);
     flushPosition();
   }, [flushPosition]);
+
+  useEffect(() => registerSpotlightConsole(), []);
 
   useEffect(() => {
     const handleMove = (x: number, y: number) => {
