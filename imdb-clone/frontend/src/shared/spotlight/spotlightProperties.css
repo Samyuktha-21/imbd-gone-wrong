@@ -1,0 +1,22 @@
+/*
+ * Registering these as typed custom properties (CSS Houdini) lets the
+ * browser interpolate them on change, so the spotlight overlay's decay
+ * and pointer tracking animate smoothly instead of snapping frame to frame.
+ */
+@property --spotlight-radius {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 220px;
+}
+
+@property --spotlight-x {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 50vw;
+}
+
+@property --spotlight-y {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 50vh;
+}
