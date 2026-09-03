@@ -98,24 +98,76 @@
 
 /* ---------- fake ad interstitial ---------- */
 
+/*
+ * Above the spotlight fog (z-index 9000) — underneath it the video would be
+ * blacked out by the very layer this gag is supposed to interrupt.
+ */
 .antiux-ad {
   position: fixed;
   inset: 0;
-  z-index: 1300;
+  z-index: 9500;
+  overflow: hidden;
+  background-color: #000000;
+  color: var(--text-primary, #ffffff);
+  text-align: center;
+}
+
+/* ---------- video stage ---------- */
+
+.antiux-ad__stage {
+  position: absolute;
+  inset: 0;
+}
+
+.antiux-ad__stage iframe {
+  position: absolute;
+  border: 0;
+}
+
+/*
+ * Full-bleed: scale the 16:9 frame until it covers the viewport on both axes,
+ * cropping the overflow. Used for the static, which should swallow the screen
+ * edge to edge rather than sit in a letterboxed rectangle.
+ */
+.antiux-ad__stage--cover iframe {
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  height: 56.25vw;
+  min-width: 177.78vh;
+  min-height: 100vh;
+  transform: translate(-50%, -50%);
+}
+
+/* Letterboxed: whole frame stays on screen. */
+.antiux-ad__stage--contain iframe {
+  top: 50%;
+  left: 50%;
+  width: min(100vw, 177.78vh);
+  height: min(56.25vw, 100vh);
+  transform: translate(-50%, -50%);
+}
+
+/* Caption block, floated over the footage. */
+.antiux-ad__chrome {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  background-color: rgba(0, 0, 0, 0.96);
-  color: var(--text-primary, #ffffff);
-  text-align: center;
+  gap: 6px;
+  padding: 16px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
 }
 
 .antiux-ad__close {
   position: absolute;
   top: 16px;
   right: 16px;
+  z-index: 1;
   border: none;
   background: transparent;
   color: var(--text-primary, #ffffff);

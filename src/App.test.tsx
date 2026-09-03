@@ -1,7 +1,8 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, test } from "vitest";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import App from "./App";
 import { SpotlightProvider } from "./spotlight";
+import { AD_VIDEOS } from "./antiux";
 
 /**
  * Integration cover for the Track A + Track B seam. The gags read
@@ -15,7 +16,47 @@ const renderApp = () =>
     </SpotlightProvider>,
   );
 
+const isFogLifted = () =>
+  document.documentElement.hasAttribute("data-spotlight-suppressed");
+
 describe("App", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.documentElement.removeAttribute("data-spotlight-suppressed");
+  });
+
+  test("plays a pre-roll that lifts the fog, then restores it on skip", () => {
+    vi.useFakeTimers();
+    try {
+      renderApp();
+      expect(isFogLifted()).toBe(false);
+
+      fireEvent.click(screen.getByRole("button", { name: /play trailer/i }));
+
+      const ad = screen.getByTestId("fake-ad-interstitial");
+      expect(AD_VIDEOS.map((video) => video.id)).toContain(
+        ad.getAttribute("data-video-id"),
+      );
+      // The one moment the page is fully visible.
+      expect(isFogLifted()).toBe(true);
+
+      // Sit through the mandatory watch time, fake resets and all.
+      act(() => {
+        vi.advanceTimersByTime(20_000);
+      });
+      expect(screen.getByTestId("fake-ad-close-button")).toBeEnabled();
+
+      fireEvent.click(screen.getByTestId("fake-ad-close-button"));
+      expect(
+        screen.queryByTestId("fake-ad-interstitial"),
+      ).not.toBeInTheDocument();
+      // ...and straight back into the dark.
+      expect(isFogLifted()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   test("renders the page with gags wired in", () => {
     renderApp();
 

@@ -1,14 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ColorShiftButton, FakeAdInterstitial } from "../antiux";
 import type { Movie } from "../data/movies";
+import { useSpotlight } from "../spotlight";
 import Poster from "./Poster";
 
 type FeaturedHeroProps = {
   movie: Movie;
 };
 
+/** Chance that a non-play action ambushes you with the pre-roll instead. */
+const SURPRISE_AD_CHANCE = 0.35;
+
 const FeaturedHero = ({ movie }: FeaturedHeroProps) => {
   const [isAdOpen, setIsAdOpen] = useState(false);
+  const { setSuppressed } = useSpotlight();
+
+  /*
+   * Lift the fog for the duration of the ad — the one moment the site is
+   * fully visible — and drop it again the instant the video ends or is
+   * skipped. Cleanup covers unmount so the page can't be left lit.
+   */
+  useEffect(() => {
+    setSuppressed(isAdOpen);
+    return () => setSuppressed(false);
+  }, [isAdOpen, setSuppressed]);
 
   return (
     <section className="hero" aria-labelledby="featured-title">
@@ -21,7 +36,7 @@ const FeaturedHero = ({ movie }: FeaturedHeroProps) => {
         </p>
         <p className="hero-blurb">{movie.blurb}</p>
         <div className="hero-actions">
-          {/* Every "play" press opens the rickroll pre-roll first. */}
+          {/* Every "play" press opens the pre-roll first. */}
           <button
             type="button"
             className="button button--primary"
@@ -29,7 +44,15 @@ const FeaturedHero = ({ movie }: FeaturedHeroProps) => {
           >
             ▶ Play Trailer
           </button>
-          <ColorShiftButton className="button button--secondary">
+          {/* ...and sometimes an unrelated action does too. */}
+          <ColorShiftButton
+            className="button button--secondary"
+            onShift={() => {
+              if (Math.random() < SURPRISE_AD_CHANCE) {
+                setIsAdOpen(true);
+              }
+            }}
+          >
             + Watchlist
           </ColorShiftButton>
         </div>
