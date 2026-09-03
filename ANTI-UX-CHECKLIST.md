@@ -7,15 +7,15 @@ Every mechanic in [ANTI-UX-IDEAS.md](ANTI-UX-IDEAS.md), with status.
 - `[—]` deliberately excluded — reason given
 
 **Ground rule for all of it** (from the top of the ideas doc): the feature must
-still *work*. Frustration is the feature; dead ends are not.
+still _work_. Frustration is the feature; dead ends are not.
 
 ---
 
 ## Cursor & Pointer Chaos
 
 - [ ] Nav bar repels the cursor, catchable against a screen edge
-- [ ] Target shatters into jigsaw pieces on contact — *partly done: built as
-      `ShatterOnClick`, currently only on the search bar, not the nav*
+- [ ] Target shatters into jigsaw pieces on contact — _partly done: built as
+      `ShatterOnClick`, currently only on the search bar, not the nav_
 - [ ] Decoy cursors moving in sync-but-offset patterns
 - [ ] Cursor inverts inside certain zones
 - [ ] Cursor teleports a few px off on click
@@ -103,7 +103,7 @@ still *work*. Frustration is the feature; dead ends are not.
 - [ ] Sticky header growing taller as you scroll
 - [ ] Thick drifting watermark over images
 
-> **Conflict:** low-contrast tiny text *underneath* the flashlight fog is
+> **Conflict:** low-contrast tiny text _underneath_ the flashlight fog is
 > unreadable, not annoying. If both ship, the fog has to lift for selected text.
 
 ## Visibility / Reveal
@@ -112,9 +112,9 @@ still *work*. Frustration is the feature; dead ends are not.
 - [x] `--spotlight-radius` editable from devtools (the sanctioned cheat)
 - [x] Console API as a second escape hatch — `spotlight.radius`
 - [—] Spotlight radius shrinking over time — **removed on request**; the fog now
-      holds a fixed size
-- [ ] Spotlight jumping to a random offset — *built and enabled, but currently
-      position-only and quite subtle*
+  holds a fixed size
+- [ ] Spotlight jumping to a random offset — _built and enabled, but currently
+      position-only and quite subtle_
 
 ## Puzzle / Mini-Game Gags
 
@@ -179,11 +179,11 @@ still *work*. Frustration is the feature; dead ends are not.
 
 ## Summary
 
-| | Count |
-| --- | --- |
-| Built | 24 |
-| Remaining | 58 |
-| Excluded | 7 |
+|           | Count |
+| --------- | ----- |
+| Built     | 24    |
+| Remaining | 58    |
+| Excluded  | 7     |
 
 ## Suggested order
 
@@ -193,3 +193,5 @@ still *work*. Frustration is the feature; dead ends are not.
 3. **Needs new surfaces** — carousel, infinite scroll, a player UI for the
    media-flow gags, a profile page for the auth gags
 4. **Pick-two-only** — the cursor chaos section, per the conflict note above
+
+END
