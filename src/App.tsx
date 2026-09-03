@@ -3,6 +3,7 @@ import { UnderwaterFilterDefs } from "./antiux";
 import SiteHeader from "./components/SiteHeader";
 import HomePage from "./pages/HomePage";
 import SearchPage from "./pages/SearchPage";
+import SignInPage from "./pages/SignInPage";
 import TitlePage from "./pages/TitlePage";
 import WatchlistPage from "./pages/WatchlistPage";
 
@@ -18,6 +19,7 @@ const App = () => (
         <Route path="/search" element={<SearchPage />} />
         <Route path="/title/:id" element={<TitlePage />} />
         <Route path="/watchlist" element={<WatchlistPage />} />
+        <Route path="/signin" element={<SignInPage />} />
         <Route
           path="*"
           element={

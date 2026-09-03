@@ -1,29 +1,10 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
-import App from "./App";
 import { navPlacementFor } from "./antiux/hooks/useNavPlacement";
 import { movies } from "./data/movies";
-import { SpotlightProvider } from "./spotlight";
-import { WatchlistProvider } from "./watchlist";
+import { clearPersistedState, renderApp as renderAt } from "./test/renderApp";
 
-const renderAt = (route: string) => {
-  const view = render(
-    <MemoryRouter initialEntries={[route]}>
-      <WatchlistProvider>
-        <SpotlightProvider>
-          <App />
-        </SpotlightProvider>
-      </WatchlistProvider>
-    </MemoryRouter>,
-  );
-  return { ...view, user: userEvent.setup() };
-};
-
-afterEach(() => {
-  window.localStorage.clear();
-});
+afterEach(clearPersistedState);
 
 /**
  * jsdom has no PointerEvent constructor, so fireEvent.pointerDown lands

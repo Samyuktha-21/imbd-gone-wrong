@@ -4,6 +4,7 @@ import { RandomLanguageSwitch, ShatterOnClick } from "../antiux";
 import type { LanguageCopy } from "../antiux";
 import { useNavPlacement } from "../antiux/hooks/useNavPlacement";
 import { useTreacherousHistory } from "../antiux/hooks/useTreacherousHistory";
+import { useAuth } from "../auth";
 import { useWatchlist } from "../watchlist";
 
 /**
@@ -43,6 +44,7 @@ const SiteHeader = () => {
   const placement = useNavPlacement();
   const { goBackSomewhere, goSomewhereUnexpected } = useTreacherousHistory();
   const { count } = useWatchlist();
+  const { isSignedIn, session } = useAuth();
 
   const [query, setQuery] = useState(params.get("q") ?? "");
   const [searchSlot, setSearchSlot] = useState(0);
@@ -116,7 +118,9 @@ const SiteHeader = () => {
         <Link to="/watchlist" className="button button--secondary">
           Watchlist{count > 0 ? ` (${count})` : ""}
         </Link>
-        <span>Sign In</span>
+        <Link to="/signin" className="header-account">
+          {isSignedIn ? session?.username : "Sign In"}
+        </Link>
       </div>
     </header>
   );
