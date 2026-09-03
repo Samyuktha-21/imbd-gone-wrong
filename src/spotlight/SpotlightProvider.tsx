@@ -1,29 +1,17 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { SpotlightContext } from "./SpotlightContext";
 import SpotlightOverlay from "./SpotlightOverlay";
 import {
-  ACTIVITY_BOOST,
-  ACTIVITY_THROTTLE_MS,
-  DECAY_INTERVAL_MS,
-  DECAY_STEP,
   DEFAULT_RADIUS,
   JUMP_DURATION_MS,
   JUMP_INTERVAL_MS,
   JUMP_OFFSET_RANGE,
 } from "./spotlightConfig";
-import { adjustRadius, writePosition, writeRadius } from "./spotlightVars";
+import { readRadius, writePosition, writeRadius } from "./spotlightVars";
 import "./spotlight.css";
 
 type SpotlightProviderProps = {
   children: ReactNode;
-  enableDecay?: boolean;
   enableRandomJumps?: boolean;
 };
 
@@ -31,25 +19,25 @@ type SpotlightProviderProps = {
  * The site's base layer. Everything renders blacked out except a small circle
  * that follows the pointer, so every other gag happens inside this fog.
  *
- * Pointer position is written straight to CSS custom properties on a rAF tick
- * and deliberately kept out of React state — re-rendering the tree on every
- * mousemove would make the fog stutter. Only the radius, which changes at
- * around 1–3Hz, is exposed to consumers via context.
+ * The circle is a fixed size for the app's lifetime — the radius is written
+ * once on mount and never touched again. That keeps the devtools cheat
+ * dependable: whatever you type into --spotlight-radius stays put.
+ *
+ * Pointer position goes straight to CSS custom properties on a rAF tick and is
+ * deliberately kept out of React state — re-rendering on every mousemove made
+ * the fog stutter. This component therefore holds no state at all and never
+ * re-renders after mount.
  */
 const SpotlightProvider = ({
   children,
-  enableDecay = true,
   enableRandomJumps = true,
 }: SpotlightProviderProps) => {
-  const [radius, setRadius] = useState(DEFAULT_RADIUS);
-
   const pointerRef = useRef({
     x: typeof window === "undefined" ? 0 : window.innerWidth / 2,
     y: typeof window === "undefined" ? 0 : window.innerHeight / 2,
   });
   const jumpOffsetRef = useRef({ dx: 0, dy: 0 });
   const frameRef = useRef<number | null>(null);
-  const lastBoostRef = useRef(0);
 
   const flushPosition = useCallback(() => {
     const { x, y } = pointerRef.current;
@@ -67,14 +55,10 @@ const SpotlightProvider = ({
     });
   }, [flushPosition]);
 
-  const widen = useCallback((amount: number) => {
-    setRadius(adjustRadius(amount));
-  }, []);
-
   // Seed the custom properties before first paint so the page never flashes
-  // fully lit.
+  // fully lit. This is the only write to the radius.
   useEffect(() => {
-    setRadius(writeRadius(DEFAULT_RADIUS));
+    writeRadius(DEFAULT_RADIUS);
     flushPosition();
   }, [flushPosition]);
 
@@ -82,12 +66,6 @@ const SpotlightProvider = ({
     const handleMove = (x: number, y: number) => {
       pointerRef.current = { x, y };
       schedulePositionWrite();
-
-      const now = Date.now();
-      if (now - lastBoostRef.current >= ACTIVITY_THROTTLE_MS) {
-        lastBoostRef.current = now;
-        setRadius(adjustRadius(ACTIVITY_BOOST));
-      }
     };
 
     const onPointerMove = (event: PointerEvent) =>
@@ -111,18 +89,6 @@ const SpotlightProvider = ({
       }
     };
   }, [schedulePositionWrite]);
-
-  useEffect(() => {
-    if (!enableDecay) {
-      return;
-    }
-
-    const id = window.setInterval(() => {
-      setRadius(adjustRadius(-DECAY_STEP));
-    }, DECAY_INTERVAL_MS);
-
-    return () => window.clearInterval(id);
-  }, [enableDecay]);
 
   useEffect(() => {
     if (!enableRandomJumps) {
@@ -152,7 +118,7 @@ const SpotlightProvider = ({
     };
   }, [enableRandomJumps, schedulePositionWrite]);
 
-  const value = useMemo(() => ({ radius, widen }), [radius, widen]);
+  const value = useMemo(() => ({ getRadius: readRadius }), []);
 
   return (
     <SpotlightContext.Provider value={value}>

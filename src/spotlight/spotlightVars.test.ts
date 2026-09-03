@@ -7,12 +7,7 @@ import {
   X_VAR,
   Y_VAR,
 } from "./spotlightConfig";
-import {
-  adjustRadius,
-  readRadius,
-  writePosition,
-  writeRadius,
-} from "./spotlightVars";
+import { readRadius, writePosition, writeRadius } from "./spotlightVars";
 
 const rootStyle = () => document.documentElement.style;
 
@@ -32,19 +27,13 @@ describe("spotlightVars", () => {
     expect(writeRadius(MAX_RADIUS + 500)).toBe(MAX_RADIUS);
   });
 
-  test("adjustRadius works relative to the live DOM value, not a cached one", () => {
+  test("reads back whatever is currently on the element", () => {
     writeRadius(300);
-    expect(adjustRadius(-25)).toBe(275);
-    expect(readRadius()).toBe(275);
-  });
-
-  test("honours an external edit to the custom property (devtools cheat)", () => {
-    writeRadius(DEFAULT_RADIUS);
+    expect(readRadius()).toBe(300);
 
     // Stand-in for someone editing --spotlight-radius in the inspector.
     rootStyle().setProperty(RADIUS_VAR, "1200px");
-
-    expect(adjustRadius(-10)).toBe(1190);
+    expect(readRadius()).toBe(1200);
   });
 
   test("writes pointer position to the x/y custom properties", () => {

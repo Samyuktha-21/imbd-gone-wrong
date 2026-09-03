@@ -1,10 +1,15 @@
 import { createContext, useContext } from "react";
 
 export type SpotlightContextValue = {
-  /** Current revealed radius in px. Updates at roughly 1–3Hz, not per frame. */
-  radius: number;
-  /** Widen the fog by `amount` px, relative to the live DOM value. */
-  widen: (amount: number) => void;
+  /**
+   * Reads the current radius in px straight from the DOM.
+   *
+   * Deliberately a getter rather than a value: the radius is fixed for the
+   * app's lifetime, so there is nothing to re-render on, but a user can still
+   * change it from devtools at any moment. A getter reports that honestly;
+   * a snapshot in state would go stale.
+   */
+  getRadius: () => number;
 };
 
 export const SpotlightContext = createContext<SpotlightContextValue | null>(

@@ -2,22 +2,15 @@ import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { useSpotlight } from "./SpotlightContext";
 import SpotlightProvider from "./SpotlightProvider";
-import {
-  ACTIVITY_THROTTLE_MS,
-  DECAY_INTERVAL_MS,
-  DECAY_STEP,
-  DEFAULT_RADIUS,
-  RADIUS_VAR,
-  X_VAR,
-} from "./spotlightConfig";
+import { DEFAULT_RADIUS, RADIUS_VAR, X_VAR, Y_VAR } from "./spotlightConfig";
 
 const rootStyle = () => document.documentElement.style;
 const currentRadius = () =>
   Number.parseFloat(rootStyle().getPropertyValue(RADIUS_VAR));
 
 const Probe = () => {
-  const { radius } = useSpotlight();
-  return <span data-testid="radius">{radius}</span>;
+  const { getRadius } = useSpotlight();
+  return <span data-testid="radius">{getRadius()}</span>;
 };
 
 const renderSpotlight = (props: Record<string, unknown> = {}) =>
@@ -39,6 +32,7 @@ describe("SpotlightProvider", () => {
     vi.useFakeTimers();
     rootStyle().removeProperty(RADIUS_VAR);
     rootStyle().removeProperty(X_VAR);
+    rootStyle().removeProperty(Y_VAR);
   });
 
   afterEach(() => {
@@ -52,61 +46,59 @@ describe("SpotlightProvider", () => {
     expect(currentRadius()).toBe(DEFAULT_RADIUS);
   });
 
-  test("tracks the pointer into the x custom property", () => {
-    renderSpotlight();
-    movePointer(321, 654);
-
-    expect(rootStyle().getPropertyValue(X_VAR)).toBe("321px");
-  });
-
-  test("shrinks the radius on each decay tick", () => {
+  test("holds the radius steady over time", () => {
     renderSpotlight();
 
     act(() => {
-      vi.advanceTimersByTime(DECAY_INTERVAL_MS);
+      vi.advanceTimersByTime(60_000);
     });
 
-    expect(currentRadius()).toBe(DEFAULT_RADIUS - DECAY_STEP);
+    expect(currentRadius()).toBe(DEFAULT_RADIUS);
   });
 
-  test("keeps a devtools-widened radius as the new decay baseline", () => {
+  test("does not change the radius in response to pointer movement", () => {
+    renderSpotlight();
+
+    movePointer(10, 10);
+    movePointer(400, 300);
+    act(() => {
+      vi.advanceTimersByTime(5_000);
+    });
+    movePointer(800, 600);
+
+    expect(currentRadius()).toBe(DEFAULT_RADIUS);
+  });
+
+  test("never overwrites a radius set from devtools", () => {
     renderSpotlight();
 
     act(() => {
       rootStyle().setProperty(RADIUS_VAR, "1500px");
     });
-    act(() => {
-      vi.advanceTimersByTime(DECAY_INTERVAL_MS);
-    });
 
-    expect(currentRadius()).toBe(1500 - DECAY_STEP);
+    // Everything that used to fight a manual edit: time passing, and moving.
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+    movePointer(120, 120);
+
+    expect(currentRadius()).toBe(1500);
   });
 
-  test("throttles the pointer-activity boost", () => {
-    renderSpotlight({ enableDecay: false });
+  test("tracks the pointer into the position custom properties", () => {
+    renderSpotlight();
+    movePointer(321, 654);
 
-    movePointer(10, 10);
-    const afterFirstMove = currentRadius();
-    expect(afterFirstMove).toBeGreaterThan(DEFAULT_RADIUS);
-
-    movePointer(11, 11);
-    expect(currentRadius()).toBe(afterFirstMove);
-
-    act(() => {
-      vi.advanceTimersByTime(ACTIVITY_THROTTLE_MS);
-    });
-    movePointer(12, 12);
-    expect(currentRadius()).toBeGreaterThan(afterFirstMove);
+    expect(rootStyle().getPropertyValue(X_VAR)).toBe("321px");
+    expect(rootStyle().getPropertyValue(Y_VAR)).toBe("654px");
   });
 
-  test("does not decay when decay is disabled", () => {
-    renderSpotlight({ enableDecay: false });
+  test("exposes the live radius through useSpotlight", () => {
+    renderSpotlight();
 
-    act(() => {
-      vi.advanceTimersByTime(DECAY_INTERVAL_MS * 4);
-    });
-
-    expect(currentRadius()).toBe(DEFAULT_RADIUS);
+    expect(screen.getByTestId("radius").textContent).toBe(
+      String(DEFAULT_RADIUS),
+    );
   });
 
   test("useSpotlight rejects use outside a provider", () => {

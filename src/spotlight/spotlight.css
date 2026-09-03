@@ -1,8 +1,11 @@
 /*
- * Registering the radius as a typed custom property lets the browser
- * interpolate it, so decay reads as a slow closing iris rather than a
- * once-per-second jerk. Position is intentionally left untyped/untransitioned
- * so the spotlight tracks the cursor with no lag.
+ * The radius is fixed while the app runs, so the only thing that ever changes
+ * it is a human typing in devtools. Registering it as a typed custom property
+ * lets the browser interpolate that edit into a smooth iris rather than a jump
+ * cut. Position is intentionally left untyped and untransitioned so the
+ * spotlight tracks the cursor with no lag.
+ *
+ * Keep initial-value in sync with DEFAULT_RADIUS in spotlightConfig.ts.
  */
 @property --spotlight-radius {
   syntax: "<length>";
