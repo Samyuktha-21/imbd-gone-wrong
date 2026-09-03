@@ -24,7 +24,9 @@ const MovieCard = ({ movie }: MovieCardProps) => {
           <MirroredText>{movie.title}</MirroredText>
         </h3>
         <span className="movie-card__meta">
-          {movie.year} · {movie.runtimeMinutes}m · {movie.certificate}
+          {[movie.year, `${movie.runtimeMinutes}m`, movie.genres[0]]
+            .filter(Boolean)
+            .join(" · ")}
         </span>
         {/*
           The shrink radius is tied to the spotlight so the label only starts

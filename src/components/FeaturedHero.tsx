@@ -31,10 +31,17 @@ const FeaturedHero = ({ movie }: FeaturedHeroProps) => {
       <div className="hero-body">
         <h1 id="featured-title">{movie.title}</h1>
         <p className="hero-meta">
-          {movie.year} · {movie.certificate} · {movie.runtimeMinutes}m ·{" "}
-          {movie.genres.join(", ")}
+          {[
+            movie.year,
+            `${movie.runtimeMinutes}m`,
+            movie.genres.join(", "),
+            `${movie.votes.toLocaleString()} votes`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
-        <p className="hero-blurb">{movie.blurb}</p>
+        {/* Only well-known titles carry a hand-written blurb; see data/blurbs.ts. */}
+        {movie.blurb && <p className="hero-blurb">{movie.blurb}</p>}
         <div className="hero-actions">
           {/* Every "play" press opens the pre-roll first. */}
           <button
