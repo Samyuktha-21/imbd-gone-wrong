@@ -63,10 +63,32 @@ def load_api_key() -> str:
 
 
 def fetch_json(url: str, retries: int = 3) -> dict[str, Any] | None:
-    """GET with a small retry budget. Returns None when the title is unknown."""
+    """GET with a small retry budget. Returns None when the title is unknown.
+
+    The browser User-Agent is load-bearing. TMDB's edge drops non-browser
+    agents — including urllib's default and any custom tool string — during the
+    connection, which surfaces as a bare reset (WinError 10054) rather than an
+    HTTP status you could branch on.
+    """
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/131.0.0.0 Safari/537.36"
+            ),
+            "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
+            # Without this the edge keeps the socket open and drops the next
+            # request in the burst instead of answering it.
+            "Connection": "close",
+        },
+    )
+
     for attempt in range(retries):
         try:
-            with urllib.request.urlopen(url, timeout=20) as response:
+            with urllib.request.urlopen(request, timeout=20) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
             if error.code == 404:
@@ -76,11 +98,15 @@ def fetch_json(url: str, retries: int = 3) -> dict[str, Any] | None:
                 time.sleep(2 * (attempt + 1))
                 continue
             if attempt == retries - 1:
-                raise
-        except urllib.error.URLError:
+                return None
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError):
+            # TMDB throttles a fast burst by resetting the connection rather
+            # than returning 429, so a bare reset is treated as back-pressure:
+            # wait longer each time, and give up on this one title rather than
+            # killing a run that is most of the way through the catalogue.
             if attempt == retries - 1:
-                raise
-            time.sleep(1 + attempt)
+                return None
+            time.sleep(3 * (attempt + 1))
     return None
 
 
@@ -97,7 +123,12 @@ def lookup(imdb_id: str, api_key: str, cache_dir: Path) -> dict[str, Any] | None
         {"api_key": api_key, "external_source": "imdb_id"}
     )
     payload = fetch_json(f"{TMDB_FIND_URL.format(imdb_id=imdb_id)}?{query}")
-    results = (payload or {}).get("movie_results") or []
+    if payload is None:
+        # Request failed rather than "no such title" — do not cache the miss,
+        # so a re-run retries it instead of baking in a transient failure.
+        return None
+
+    results = payload.get("movie_results") or []
     record = results[0] if results else None
 
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -156,7 +187,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE_DIR)
-    parser.add_argument("--sleep-seconds", type=float, default=0.06)
+    # Conservative on purpose: TMDB starts resetting connections well before
+    # its documented rate limit when requests arrive back to back.
+    parser.add_argument("--sleep-seconds", type=float, default=0.3)
     parser.add_argument("--log-every", type=int, default=25)
     return parser.parse_args(argv)
 

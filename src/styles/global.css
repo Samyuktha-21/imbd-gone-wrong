@@ -225,8 +225,10 @@ body {
   object-fit: cover;
 }
 
+/* Above the caustics overlay, or the title reads through a haze of light. */
 .poster__fallback {
   position: relative;
+  z-index: 2;
 }
 
 /* ---------- grid ---------- */

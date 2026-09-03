@@ -39,12 +39,66 @@
 
 /* Page-wide ripple. Hover "surfaces" the element so it stays finishable. */
 .antiux-underwater {
+  position: relative;
   filter: url(#antiux-underwater-filter);
   transition: filter 220ms ease-out;
 }
 
 .antiux-underwater:hover {
   filter: none;
+}
+
+/*
+ * Caustics: the moving bands of light on the bottom of a pool. Sells "this is
+ * submerged" in a way displacement alone cannot, and costs one extra composited
+ * layer rather than another filter pass.
+ *
+ * Sits above the image but below any text, and clears on hover with the ripple
+ * so surfacing an element really does give you a clean look at it.
+ */
+.antiux-underwater::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.55;
+  transition: opacity 220ms ease-out;
+  mix-blend-mode: screen;
+  background:
+    repeating-linear-gradient(
+      68deg,
+      rgba(120, 214, 255, 0) 0 14px,
+      rgba(120, 214, 255, 0.16) 18px,
+      rgba(120, 214, 255, 0) 26px
+    ),
+    repeating-linear-gradient(
+      -54deg,
+      rgba(90, 255, 236, 0) 0 22px,
+      rgba(90, 255, 236, 0.12) 27px,
+      rgba(90, 255, 236, 0) 36px
+    );
+  background-size: 220% 220%, 260% 260%;
+  animation: antiux-caustics 11s ease-in-out infinite alternate;
+}
+
+.antiux-underwater:hover::after {
+  opacity: 0;
+}
+
+@keyframes antiux-caustics {
+  from {
+    background-position: 0% 0%, 100% 0%;
+  }
+  to {
+    background-position: 60% 100%, 20% 80%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .antiux-underwater::after {
+    animation: none;
+  }
 }
 
 /* ---------- shatter ---------- */

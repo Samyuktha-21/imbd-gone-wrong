@@ -27,15 +27,34 @@ const UnderwaterFilterDefs = () => (
             attributeName="baseFrequency"
             dur="6s"
             repeatCount="indefinite"
-            values="0.01 0.04;0.02 0.06;0.01 0.04"
+            values="0.01 0.04;0.022 0.065;0.01 0.04"
           />
         </feTurbulence>
+
         <feDisplacementMap
           in="SourceGraphic"
           in2="wave"
-          scale={14}
+          scale={20}
           xChannelSelector="R"
           yChannelSelector="G"
+          result="rippled"
+        />
+
+        {/*
+          Photographs need more than displacement to read as "underwater".
+          A real poster is high-contrast and legible enough that a wobble alone
+          just looks like a rendering fault, so the refraction is followed by a
+          soft focus and a cool cast — the way depth actually eats warm light.
+        */}
+        <feGaussianBlur in="rippled" stdDeviation={0.7} result="softened" />
+
+        <feColorMatrix
+          in="softened"
+          type="matrix"
+          values="0.75 0     0     0 0
+                  0     0.92 0.06  0 0
+                  0.06  0.14 1.05  0 0
+                  0     0     0     1 0"
         />
       </filter>
     </defs>
